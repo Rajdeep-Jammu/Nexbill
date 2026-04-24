@@ -310,6 +310,28 @@
         "uid",
         "email"
       ]
+    },
+     "AdminProfile": {
+      "title": "Admin Profile",
+      "description": "Represents a user with administrative privileges.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's Firebase Authentication UID."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["ADMIN"],
+          "description": "The administrative role of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email, denormalized for easier display in admin panels."
+        }
+      },
+      "required": ["uid", "role"]
     }
   },
   "auth": {
@@ -421,6 +443,16 @@
           "entityName": "UserProfile",
           "schema": { "$ref": "#/backend/entities/UserProfile" },
           "description": "Stores public profile information for each user."
+        }
+      },
+      {
+        "path": "/admins/{userId}",
+        "definition": {
+          "entityName": "AdminProfile",
+          "schema": {
+            "$ref": "#/backend/entities/AdminProfile"
+          },
+          "description": "Stores a record of users who have been granted administrative privileges. The existence of a document here, with `role: 'ADMIN'`, signifies that the user is an admin."
         }
       }
     ],

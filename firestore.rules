@@ -75,6 +75,15 @@ service cloud.firestore {
       let shopDoc = get(/databases/$(database)/documents/shops/$(shopId));
       return isSignedIn() && shopDoc.data.shopOwnerId == request.auth.uid;
     }
+    
+    /**
+     * Checks if the currently authenticated user is an Admin, by checking
+     * for the existence of a document in the 'admins' collection.
+     */
+    function isAppAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
 
     /**
      * Checks if the user is the owner based on the 'shopOwnerId' field
@@ -106,6 +115,18 @@ service cloud.firestore {
     match /public/{docId} {
         allow get: if true;
         allow write: if isShopOwner(request.resource.data.activeShopId);
+    }
+    
+    /**
+     * @description Controls access to the 'admins' collection for role management.
+     * @path /admins/{userId}
+     * @allow (get) A user can check their own admin status.
+     * @allow (list, write) Only existing admins can list all admins or grant/revoke admin roles.
+     * @principle Enables a role-based access control system managed within Firestore.
+     */
+    match /admins/{userId} {
+      allow get: if isAuthOwner(userId);
+      allow list, write: if isAppAdmin();
     }
 
     /**

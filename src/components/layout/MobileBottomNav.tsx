@@ -8,6 +8,7 @@ import {
   FileText,
   BarChart3,
   Settings,
+  UsersRound,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/admin/inventory", icon: Boxes, label: "Inventory" },
   { href: "/admin/billing", icon: FileText, label: "Billing" },
   { href: "/admin/reports", icon: BarChart3, label: "Reports" },
+  { href: "/admin/roles", icon: UsersRound, label: "Admins" },
   { href: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
