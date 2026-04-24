@@ -4,13 +4,14 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import {
+  ChartContainer,
+  ChartTooltip,
   ChartTooltipContent,
+  type ChartConfig,
 } from "@/components/ui/chart";
 
 const data = [
@@ -23,10 +24,17 @@ const data = [
   { day: "Sun", sales: 3490 },
 ];
 
+const chartConfig = {
+  sales: {
+    label: "Sales",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
 export default function SalesChart() {
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data}>
+    <ChartContainer config={chartConfig} className="h-full w-full">
+      <BarChart data={data} accessibilityLayer>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
         <XAxis
           dataKey="day"
@@ -42,7 +50,7 @@ export default function SalesChart() {
           axisLine={false}
           tickFormatter={(value) => `₹${value / 1000}k`}
         />
-        <Tooltip
+        <ChartTooltip
           cursor={{ fill: 'hsl(var(--secondary))', radius: 'var(--radius)' }}
           content={<ChartTooltipContent
             formatter={(value) => `₹${value.toLocaleString()}`}
@@ -51,8 +59,8 @@ export default function SalesChart() {
             className="rounded-lg border-border bg-background/80 backdrop-blur-sm"
           />}
         />
-        <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} />
       </BarChart>
-    </ResponsiveContainer>
+    </ChartContainer>
   );
 }
