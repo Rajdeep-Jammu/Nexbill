@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState, useMemo } from 'react';
 import { collection, query, where, doc } from 'firebase/firestore';
@@ -154,7 +155,7 @@ export default function ProfilePage() {
             </Card>
           ) : (
             <div className="flex h-48 items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/50">
-              <p className="text-muted-foreground">You haven&apos;t made any purchases yet.</p>
+              <p className="text-muted-foreground">You haven't made any purchases yet.</p>
             </div>
           )}
         </div>
