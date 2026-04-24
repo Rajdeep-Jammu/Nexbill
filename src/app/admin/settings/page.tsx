@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/hooks/use-auth-store";
-import { useSalesStore } from "@/hooks/use-sales-store";
 import { useBillingStore } from "@/hooks/use-billing-store";
 import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,7 +29,6 @@ export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { shopName, reset: resetAuth, logout, biometricEnabled, toggleBiometric, upiId, qrCodeUrl, setPaymentDetails } = useAuthStore();
-  const { clearSales } = useSalesStore();
   const { clearCart } = useBillingStore();
   
   const [localUpiId, setLocalUpiId] = useState(upiId || "");
@@ -43,7 +41,6 @@ export default function SettingsPage() {
 
   const handleReset = () => {
     resetAuth();
-    clearSales();
     clearCart();
     toast({
       title: "Application Reset",

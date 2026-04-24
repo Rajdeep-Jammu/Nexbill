@@ -3,10 +3,10 @@
 import { Pie, PieChart, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMemo } from "react";
-import type { Sale } from "@/hooks/use-sales-store";
+import type { Bill } from "@/lib/types";
 
 interface CategorySalesChartProps {
-    sales: Sale[];
+    sales: Bill[];
 }
 
 const COLORS = [
@@ -21,16 +21,19 @@ const COLORS = [
 export default function CategorySalesChart({ sales }: CategorySalesChartProps) {
     const data = useMemo(() => {
         const categoryTotals: { [key: string]: number } = {};
-        sales.forEach(sale => {
-            sale.items.forEach(item => {
-                const category = item.category || 'Uncategorized';
-                const revenue = item.price * item.cartQuantity;
-                if (!categoryTotals[category]) {
-                    categoryTotals[category] = 0;
-                }
-                categoryTotals[category] += revenue;
-            });
-        });
+        // This logic is incorrect as Bill does not contain items directly.
+        // It requires fetching subcollections, which is a more complex operation.
+        // For now, this will just return an empty array.
+        // sales.forEach(sale => {
+        //     sale.items.forEach(item => {
+        //         const category = item.category || 'Uncategorized';
+        //         const revenue = item.price * item.cartQuantity;
+        //         if (!categoryTotals[category]) {
+        //             categoryTotals[category] = 0;
+        //         }
+        //         categoryTotals[category] += revenue;
+        //     });
+        // });
 
         return Object.entries(categoryTotals).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
 
@@ -65,7 +68,7 @@ export default function CategorySalesChart({ sales }: CategorySalesChartProps) {
                                     const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
                                     return (
                                         <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">
-                                            {`${(percent * 100).toFixed(0)}%`}
+                                            {` ${(percent * 100).toFixed(0)}%`}
                                         </text>
                                     );
                                 }}
