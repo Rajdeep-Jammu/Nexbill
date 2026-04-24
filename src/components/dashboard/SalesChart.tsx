@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import {
+  ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
@@ -33,34 +34,36 @@ const chartConfig = {
 
 export default function SalesChart() {
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} accessibilityLayer>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-        <XAxis
-          dataKey="day"
-          stroke="hsl(var(--muted-foreground))"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-        />
-        <YAxis
-          stroke="hsl(var(--muted-foreground))"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(value) => `₹${value / 1000}k`}
-        />
-        <ChartTooltip
-          cursor={{ fill: 'hsl(var(--secondary))', radius: 'var(--radius)' }}
-          content={<ChartTooltipContent
-            formatter={(value) => `₹${value.toLocaleString()}`}
-            indicator="dot"
-            labelClassName="font-bold"
-            className="rounded-lg border-border bg-background/80 backdrop-blur-sm"
-          />}
-        />
-        <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
+    <ChartContainer config={chartConfig} className="h-full w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} accessibilityLayer>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+          <XAxis
+            dataKey="day"
+            stroke="hsl(var(--muted-foreground))"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            stroke="hsl(var(--muted-foreground))"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value) => `₹${value / 1000}k`}
+          />
+          <ChartTooltip
+            cursor={{ fill: 'hsl(var(--secondary))', radius: 'var(--radius)' }}
+            content={<ChartTooltipContent
+              formatter={(value) => `₹${value.toLocaleString()}`}
+              indicator="dot"
+              labelClassName="font-bold"
+              className="rounded-lg border-border bg-background/80 backdrop-blur-sm"
+            />}
+          />
+          <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </ChartContainer>
   );
 }
