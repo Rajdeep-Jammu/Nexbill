@@ -6,6 +6,7 @@ import CurrentBill from "@/components/billing/CurrentBill";
 import { getProducts } from "@/lib/data";
 import PastBills from "@/components/billing/PastBills";
 import { Separator } from "@/components/ui/separator";
+import SessionLoader from "@/components/billing/SessionLoader";
 
 export default function BillingPage() {
   const products = getProducts();
@@ -13,6 +14,7 @@ export default function BillingPage() {
   return (
     <div>
       <PageHeader title="Billing" />
+      <SessionLoader />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
             <ProductSelector products={products} />

@@ -10,10 +10,12 @@ import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import BillGeneratedDialog from "./BillGeneratedDialog";
 import { useState } from "react";
 import type { CartItem } from "@/lib/types";
+import { useSessionsStore } from "@/hooks/use-sessions-store";
 
 export default function CurrentBill() {
-  const { items, updateQuantity, removeFromCart, totalAmount, clearCart } = useBillingStore();
+  const { items, updateQuantity, removeFromCart, totalAmount, clearCart, activeSessionId } = useBillingStore();
   const addSale = useSalesStore((state) => state.addSale);
+  const updateSessionStatus = useSessionsStore(state => state.updateSessionStatus);
   const [billData, setBillData] = useState<{ items: CartItem[], total: number} | null>(null);
 
   const handleCheckout = () => {
@@ -26,6 +28,9 @@ export default function CurrentBill() {
   const onDialogClose = () => {
     if (billData) {
       addSale(billData);
+       if (activeSessionId) {
+        updateSessionStatus(activeSessionId, 'paid');
+      }
     }
     setBillData(null);
     clearCart();

@@ -1,18 +1,23 @@
+"use client";
+
 import { create } from "zustand";
 import type { Product, CartItem } from "@/lib/types";
 
 interface BillingState {
   items: CartItem[];
+  activeSessionId: string | null;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  loadCart: (items: CartItem[], sessionId: string) => void;
   totalItems: () => number;
   totalAmount: () => number;
 }
 
 export const useBillingStore = create<BillingState>((set, get) => ({
   items: [],
+  activeSessionId: null,
   addToCart: (product) => {
     const { items } = get();
     const existingItem = items.find((item) => item.id === product.id);
@@ -54,7 +59,10 @@ export const useBillingStore = create<BillingState>((set, get) => ({
       });
     }
   },
-  clearCart: () => set({ items: [] }),
+  clearCart: () => set({ items: [], activeSessionId: null }),
+  loadCart: (items, sessionId) => {
+    set({ items, activeSessionId: sessionId });
+  },
   totalItems: () => get().items.reduce((total, item) => total + item.cartQuantity, 0),
   totalAmount: () => get().items.reduce((total, item) => total + item.price * item.cartQuantity, 0),
 }));

@@ -8,20 +8,20 @@ import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { useSessionsStore } from "@/hooks/use-sessions-store";
+import { useRouter } from "next/navigation";
 
 export default function Cart() {
   const { items, updateQuantity, removeFromCart, totalAmount, clearCart } = useBillingStore();
   const { toast } = useToast();
+  const createSession = useSessionsStore((state) => state.createSession);
+  const router = useRouter();
 
   const handleCheckout = () => {
-    // For now, just clears the cart and shows a success message.
-    // The full session code flow will be implemented later.
     if (items.length > 0) {
-        toast({
-            title: "Checkout Successful!",
-            description: "Your order has been placed.",
-        });
+        const session = createSession(items, totalAmount());
         clearCart();
+        router.push(`/checkout/${session.id}`);
     } else {
         toast({
             variant: "destructive",
