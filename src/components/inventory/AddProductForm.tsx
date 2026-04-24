@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Wand2, Loader2 } from "lucide-react";
 
-import { productSchema, type Product } from "@/app/(main)/inventory/product-schema";
-import { addProduct, generateDescriptionAction } from "@/app/(main)/inventory/actions";
+import { productSchema, type Product } from "@/app/admin/inventory/product-schema";
+import { addProduct, generateDescriptionAction } from "@/app/admin/inventory/actions";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
