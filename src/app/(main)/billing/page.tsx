@@ -1,3 +1,5 @@
+"use client";
+
 import PageHeader from "@/components/PageHeader";
 import ProductSelector from "@/components/billing/ProductSelector";
 import CurrentBill from "@/components/billing/CurrentBill";
