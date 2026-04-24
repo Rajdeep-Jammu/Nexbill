@@ -9,6 +9,7 @@ interface AuthState {
   setup: (shopName: string, pin: string) => void;
   login: () => void;
   logout: () => void;
+  reset: () => void;
 }
 
 const useAuthStoreUnpersisted = create<AuthState>((set) => ({
@@ -19,6 +20,7 @@ const useAuthStoreUnpersisted = create<AuthState>((set) => ({
     setup: (shopName, pin) => set({ shopName, pin }),
     login: () => set({ isLoggedIn: true }),
     logout: () => set({ isLoggedIn: false }),
+    reset: () => set({ shopName: null, pin: null, isLoggedIn: false, initialized: true }),
 }));
 
 export const useAuthStore = create<AuthState>()(
@@ -30,6 +32,7 @@ export const useAuthStore = create<AuthState>()(
       },
       login: () => set({ isLoggedIn: true }),
       logout: () => set({ isLoggedIn: false }),
+      reset: () => set({ shopName: null, pin: null, isLoggedIn: false, initialized: true }),
     }),
     {
       name: "auth-storage",

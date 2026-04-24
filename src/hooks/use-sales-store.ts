@@ -12,6 +12,8 @@ export type Sale = {
 interface SalesState {
   sales: Sale[];
   addSale: (saleData: { items: CartItem[], total: number }) => void;
+  deleteSale: (saleId: string) => void;
+  clearSales: () => void;
 }
 
 export const useSalesStore = create<SalesState>()(
@@ -26,6 +28,10 @@ export const useSalesStore = create<SalesState>()(
         };
         set({ sales: [newSale, ...get().sales] });
       },
+      deleteSale: (saleId: string) => {
+        set({ sales: get().sales.filter((s) => s.id !== saleId) });
+      },
+      clearSales: () => set({ sales: [] }),
     }),
     {
       name: "sales-storage",

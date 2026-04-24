@@ -4,6 +4,8 @@ import PageHeader from "@/components/PageHeader";
 import ProductSelector from "@/components/billing/ProductSelector";
 import CurrentBill from "@/components/billing/CurrentBill";
 import { getProducts } from "@/lib/data";
+import PastBills from "@/components/billing/PastBills";
+import { Separator } from "@/components/ui/separator";
 
 export default function BillingPage() {
   const products = getProducts();
@@ -19,6 +21,8 @@ export default function BillingPage() {
             <CurrentBill />
         </div>
       </div>
+      <Separator className="my-8" />
+      <PastBills />
     </div>
   );
 }
