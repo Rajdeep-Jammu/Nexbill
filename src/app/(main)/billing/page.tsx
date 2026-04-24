@@ -1,11 +1,21 @@
 import PageHeader from "@/components/PageHeader";
+import ProductSelector from "@/components/billing/ProductSelector";
+import CurrentBill from "@/components/billing/CurrentBill";
+import { getProducts } from "@/lib/data";
 
 export default function BillingPage() {
+  const products = getProducts();
+
   return (
     <div>
       <PageHeader title="Billing" />
-      <div className="flex h-[60vh] items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/50">
-        <p className="text-muted-foreground">Billing System Coming Soon</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+            <ProductSelector products={products} />
+        </div>
+        <div>
+            <CurrentBill />
+        </div>
       </div>
     </div>
   );

@@ -7,3 +7,7 @@ export type Product = {
   imageUrl: string;
   imageHint?: string;
 };
+
+export type CartItem = Product & {
+  cartQuantity: number;
+};
