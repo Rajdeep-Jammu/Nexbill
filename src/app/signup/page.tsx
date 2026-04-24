@@ -1,52 +1,80 @@
 'use client';
 
-import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useActionState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { useAuth, useUser } from '@/firebase';
 
-import { signup } from '@/app/auth/actions';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const initialState = {
-  message: '',
-};
-
-function SignupButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full text-base font-bold" size="lg">
-      {pending ? <Loader2 className="animate-spin" /> : 'Create Account'}
-    </Button>
-  );
-}
-
 export default function SignupPage() {
-  const [state, formAction] = useActionState(signup, initialState);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
 
+  // If user is already logged in, redirect to profile
   useEffect(() => {
-    if (state.message === 'Success') {
+    if (!isUserLoading && user) {
+      router.replace('/profile');
+    }
+  }, [user, isUserLoading, router]);
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({
+        variant: 'destructive',
+        title: 'Signup Failed',
+        description: 'Email and password are required.',
+      });
+      return;
+    }
+    if (password.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: 'Signup Failed',
+        description: 'Password must be at least 6 characters long.',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
       toast({
         title: 'Account Created',
         description: "You've been successfully signed up!",
       });
       router.push('/profile');
-    } else if (state.message) {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
-        description: state.message,
+        description: error.message || 'An unknown error occurred.',
       });
+    } finally {
+      setIsLoading(false);
     }
-  }, [state, router, toast]);
+  };
+
+  if (isUserLoading || user) {
+     return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <main className="flex h-screen w-full flex-col items-center justify-center bg-background p-4">
@@ -62,7 +90,7 @@ export default function SignupPage() {
         </h1>
         <p className="mt-2 text-muted-foreground">Join to track your orders.</p>
 
-        <form action={formAction} className="mt-8 w-full space-y-6">
+        <form onSubmit={handleSignup} className="mt-8 w-full space-y-6">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -72,6 +100,8 @@ export default function SignupPage() {
               placeholder="you@example.com"
               required
               className="h-12 text-base"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -83,9 +113,13 @@ export default function SignupPage() {
               required
               minLength={6}
               className="h-12 text-base"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <SignupButton />
+          <Button type="submit" disabled={isLoading} className="w-full text-base font-bold" size="lg">
+            {isLoading ? <Loader2 className="animate-spin" /> : 'Create Account'}
+          </Button>
         </form>
 
         <p className="mt-6 text-sm text-muted-foreground">
