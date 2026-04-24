@@ -6,7 +6,7 @@ import { useAuthStore } from "@/hooks/use-auth-store";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { Loader2 } from "lucide-react";
 
-export default function MainAppLayout({
+export default function AdminAppLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -21,7 +21,7 @@ export default function MainAppLayout({
 
   useEffect(() => {
     if (isClient && initialized && !isLoggedIn) {
-      router.replace("/");
+      router.replace("/admin/login");
     }
   }, [isClient, initialized, isLoggedIn, router]);
 

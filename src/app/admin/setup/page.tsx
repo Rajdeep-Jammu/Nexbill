@@ -62,7 +62,7 @@ export default function WelcomePage() {
         title: "Setup Complete!",
         description: `Welcome to ${shopName}. Your shop is ready.`,
       });
-      router.replace("/");
+      router.replace("/admin/login");
       setIsSubmitting(false);
     }, 500);
   };

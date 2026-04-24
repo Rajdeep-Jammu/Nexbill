@@ -7,70 +7,70 @@ interface AuthState {
   isLoggedIn: boolean;
   initialized: boolean;
   biometricEnabled: boolean;
+  upiId: string | null;
+  qrCodeUrl: string | null;
   setup: (shopName: string, pin: string) => void;
   login: () => void;
   logout: () => void;
   reset: () => void;
   toggleBiometric: () => void;
   changePin: (oldPin: string, newPin: string) => boolean;
+  setPaymentDetails: (details: { upiId: string; qrCodeUrl: string }) => void;
 }
 
-const useAuthStoreUnpersisted = create<AuthState>((set, get) => ({
-    shopName: null,
-    pin: null,
-    isLoggedIn: false,
-    initialized: false,
-    biometricEnabled: false,
-    setup: (shopName, pin) => set({ shopName, pin, biometricEnabled: false }),
-    login: () => set({ isLoggedIn: true }),
-    logout: () => set({ isLoggedIn: false }),
-    reset: () => set({ shopName: null, pin: null, isLoggedIn: false, initialized: true, biometricEnabled: false }),
-    toggleBiometric: () => set((state) => ({ biometricEnabled: !state.biometricEnabled })),
-    changePin: (oldPin: string, newPin: string) => {
-        const { pin } = get();
-        if (pin === oldPin) {
-            set({ pin: newPin });
-            return true;
-        }
-        return false;
-    }
-}));
+const initialState = {
+  shopName: null,
+  pin: null,
+  isLoggedIn: false,
+  initialized: false,
+  biometricEnabled: false,
+  upiId: null,
+  qrCodeUrl: null,
+};
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      ...useAuthStoreUnpersisted.getState(),
+      ...initialState,
       setup: (shopName: string, pin: string) => {
-        set({ shopName, pin, initialized: true, biometricEnabled: false });
+        set({ 
+            ...initialState, 
+            shopName, 
+            pin, 
+            initialized: true 
+        });
       },
       login: () => set({ isLoggedIn: true }),
       logout: () => set({ isLoggedIn: false }),
-      reset: () => set({ shopName: null, pin: null, isLoggedIn: false, initialized: true, biometricEnabled: false }),
-      toggleBiometric: () => set(state => ({ biometricEnabled: !(state as AuthState).biometricEnabled })),
+      reset: () => set({ ...initialState, initialized: true }),
+      toggleBiometric: () => set(state => ({ biometricEnabled: !state.biometricEnabled })),
       changePin: (oldPin: string, newPin: string) => {
-        const { pin: currentPin } = get();
-        if (currentPin === oldPin) {
+        if (get().pin === oldPin) {
           set({ pin: newPin });
           return true;
         }
         return false;
       },
+      setPaymentDetails: (details) => set({ upiId: details.upiId, qrCodeUrl: details.qrCodeUrl }),
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      onRehydrate: (state) => {
+      onRehydrate: () => {
          useAuthStore.setState({ initialized: true });
-         if(state && typeof (state as AuthState).biometricEnabled === 'undefined') {
-            (state as AuthState).biometricEnabled = false;
-         }
       },
-      merge: (persistedState, currentState) => {
-        const merged = { ...currentState, ...(persistedState as object) };
-        if (typeof (merged as AuthState).biometricEnabled === 'undefined') {
-            (merged as AuthState).biometricEnabled = false;
+       merge: (persistedState, currentState) => {
+        const state = persistedState as any;
+        if (typeof state.biometricEnabled === 'undefined') {
+            state.biometricEnabled = false;
         }
-        return merged;
+        if (typeof state.upiId === 'undefined') {
+            state.upiId = null;
+        }
+        if (typeof state.qrCodeUrl === 'undefined') {
+            state.qrCodeUrl = null;
+        }
+        return { ...currentState, ...state };
       }
     }
   )

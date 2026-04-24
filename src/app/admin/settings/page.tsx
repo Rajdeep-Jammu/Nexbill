@@ -20,21 +20,25 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, KeyRound } from "lucide-react";
+import { LogOut, KeyRound, QrCode, Wallet } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { ChangePinDialog } from "@/components/settings/ChangePinDialog";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { shopName, reset: resetAuth, logout, biometricEnabled, toggleBiometric } = useAuthStore();
+  const { shopName, reset: resetAuth, logout, biometricEnabled, toggleBiometric, upiId, qrCodeUrl, setPaymentDetails } = useAuthStore();
   const { clearSales } = useSalesStore();
   const { clearCart } = useBillingStore();
+  
+  const [localUpiId, setLocalUpiId] = useState(upiId || "");
+  const [localQrCodeUrl, setLocalQrCodeUrl] = useState(qrCodeUrl || "");
 
   const handleLogout = () => {
     logout();
-    router.replace("/");
+    router.replace("/admin/login");
   };
 
   const handleReset = () => {
@@ -45,7 +49,15 @@ export default function SettingsPage() {
       title: "Application Reset",
       description: "All your data has been cleared. Please set up a new shop.",
     });
-    router.replace("/welcome");
+    router.replace("/admin/setup");
+  };
+
+  const handlePaymentDetailsSave = () => {
+    setPaymentDetails({ upiId: localUpiId, qrCodeUrl: localQrCodeUrl });
+    toast({
+      title: "Payment Details Saved",
+      description: "Your UPI and QR code information has been updated.",
+    });
   };
 
   return (
@@ -89,6 +101,24 @@ export default function SettingsPage() {
                 </Button>
              </ChangePinDialog>
           </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Payment Settings</CardTitle>
+                <CardDescription>Configure QR code and UPI details for receiving payments.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="space-y-2">
+                    <Label htmlFor="upiId" className="flex items-center"><Wallet className="mr-2 h-4 w-4" />UPI ID</Label>
+                    <Input id="upiId" placeholder="your-name@upi" value={localUpiId} onChange={(e) => setLocalUpiId(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="qrCodeUrl" className="flex items-center"><QrCode className="mr-2 h-4 w-4" />QR Code Image URL</Label>
+                    <Input id="qrCodeUrl" placeholder="https://your-image-url.com/qr.png" value={localQrCodeUrl} onChange={(e) => setLocalQrCodeUrl(e.target.value)} />
+                </div>
+                <Button onClick={handlePaymentDetailsSave}>Save Payment Details</Button>
+            </CardContent>
         </Card>
 
         <Card className="border-destructive">

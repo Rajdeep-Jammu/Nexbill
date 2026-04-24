@@ -1,8 +1,10 @@
-import { DollarSign, Package, ShoppingCart, TrendingUp } from "lucide-react";
+import { DollarSign, Package, ShoppingCart, TrendingUp, Eye } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/dashboard/StatCard";
 import SalesChart from "@/components/dashboard/SalesChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function DashboardPage() {
   // Mock data for demonstration
@@ -36,7 +38,14 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" />
+      <PageHeader title="Dashboard">
+        <Link href="/">
+          <Button variant="outline">
+            <Eye className="mr-2" />
+            View Customer App
+          </Button>
+        </Link>
+      </PageHeader>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {stats.map((stat) => (
           <StatCard

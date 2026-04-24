@@ -14,11 +14,11 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/inventory", icon: Boxes, label: "Inventory" },
-  { href: "/billing", icon: FileText, label: "Billing" },
-  { href: "/reports", icon: BarChart3, label: "Reports" },
-  { href: "/settings", icon: Settings, label: "Settings" },
+  { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin/inventory", icon: Boxes, label: "Inventory" },
+  { href: "/admin/billing", icon: FileText, label: "Billing" },
+  { href: "/admin/reports", icon: BarChart3, label: "Reports" },
+  { href: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
 export default function MobileBottomNav() {
