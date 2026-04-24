@@ -1,7 +1,7 @@
 'use server';
 
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirebase } from '@/firebase';
+import { initializeFirebase } from '@/firebase/init';
 
 export async function login(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
