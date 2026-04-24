@@ -182,24 +182,12 @@ export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void })
             <FormItem className="sm:col-span-2">
               <div className="flex items-center justify-between">
                 <FormLabel>Description</FormLabel>
-                <button
-                  type="button"
-                  formAction={genAction}
-                  onClick={() => formRef.current?.requestSubmit(
-                      document.activeElement as HTMLElement
-                    )
-                  }
-                  className="hidden"
-                >Generate</button>
-                 <Button
-                    type="button"
+                <Button
+                    type="submit"
+                    formAction={genAction}
                     variant="outline"
                     size="sm"
                     className="gap-2"
-                    onClick={() => {
-                        const formData = new FormData(formRef.current!);
-                        genAction(formData)
-                    }}
                     >
                     <Wand2 className="h-4 w-4 text-primary" />
                     Generate with AI
