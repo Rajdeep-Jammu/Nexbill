@@ -24,7 +24,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       whileHover={{ y: -5, scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300 }}
     >
-      <Card className="overflow-hidden rounded-2xl border-border bg-card/50 shadow-lg transition-all hover:shadow-primary/20">
+      <Card className="overflow-hidden rounded-xl border-border bg-card/50 shadow-md transition-all hover:shadow-primary/20">
         <CardContent className="p-0">
           <div className="relative">
             <Image
@@ -37,21 +37,21 @@ export default function ProductCard({ product }: ProductCardProps) {
             />
             <div
               className={cn(
-                "absolute top-3 right-3 h-3 w-3 rounded-full border-2 border-background",
+                "absolute top-2 right-2 h-2.5 w-2.5 rounded-full border border-background",
                 getStockStatus(product.quantity)
               )}
             />
           </div>
-          <div className="p-4">
-            <h3 className="font-semibold text-lg truncate text-foreground">
+          <div className="p-3">
+            <h3 className="font-semibold text-sm truncate text-foreground">
               {product.name}
             </h3>
-            <p className="text-sm text-muted-foreground">{`Qty: ${product.quantity}`}</p>
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-xl font-bold text-foreground">
+            <p className="text-xs text-muted-foreground">{`Qty: ${product.quantity}`}</p>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-base font-bold text-foreground">
                 ₹{product.price.toLocaleString()}
               </p>
-              <Badge variant="secondary" className="font-mono">{product.category}</Badge>
+              <Badge variant="secondary" className="font-mono text-xs px-1.5 py-0.5">{product.category}</Badge>
             </div>
           </div>
         </CardContent>

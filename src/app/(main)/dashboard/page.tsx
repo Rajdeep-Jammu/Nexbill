@@ -10,33 +10,33 @@ export default function DashboardPage() {
       title: "Today's Sales",
       value: "₹12,545",
       change: "+15%",
-      icon: <DollarSign className="h-6 w-6 text-primary" />,
+      icon: <DollarSign className="h-5 w-5 text-primary" />,
     },
     {
       title: "Total Products",
       value: "842",
       change: "+5 new",
-      icon: <Package className="h-6 w-6 text-primary" />,
+      icon: <Package className="h-5 w-5 text-primary" />,
     },
     {
       title: "Inventory Value",
       value: "₹8,34,980",
       change: "",
-      icon: <ShoppingCart className="h-6 w-6 text-primary" />,
+      icon: <ShoppingCart className="h-5 w-5 text-primary" />,
     },
     {
       title: "Low Stock",
       value: "12 items",
       change: "2 critical",
       isWarning: true,
-      icon: <TrendingUp className="h-6 w-6 text-destructive" />,
+      icon: <TrendingUp className="h-5 w-5 text-destructive" />,
     },
   ];
 
   return (
     <div>
       <PageHeader title="Dashboard" />
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {stats.map((stat) => (
           <StatCard
             key={stat.title}
@@ -49,11 +49,11 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="mt-8">
-        <h2 className="font-headline text-2xl font-semibold text-foreground mb-4">
+      <div className="mt-6 sm:mt-8">
+        <h2 className="font-headline text-xl sm:text-2xl font-semibold text-foreground mb-4">
           Weekly Sales
         </h2>
-        <div className="h-80 rounded-2xl border border-border bg-card/50 p-4">
+        <div className="h-64 sm:h-80 rounded-2xl border border-border bg-card/50 p-2 sm:p-4">
           <SalesChart />
         </div>
       </div>

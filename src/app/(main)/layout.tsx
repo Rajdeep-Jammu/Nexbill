@@ -34,13 +34,11 @@ export default function MainAppLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      <main className="flex-1 p-4 sm:p-6">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <main className="flex-1 p-4 pb-24">
         {children}
       </main>
       <MobileBottomNav />
-      {/* Add padding to bottom of main content to avoid overlap with mobile nav */}
-      <div className="h-24"></div>
     </div>
   );
 }

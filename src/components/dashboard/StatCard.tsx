@@ -17,15 +17,15 @@ export default function StatCard({
   isWarning = false,
 }: StatCardProps) {
   return (
-    <Card className="rounded-2xl border-border bg-card/50 shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card className="rounded-xl border-border bg-card/50 shadow-md">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+        <CardTitle className="text-xs font-medium text-muted-foreground">
           {title}
         </CardTitle>
         {icon}
       </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold text-foreground">{value}</div>
+      <CardContent className="p-4 pt-0">
+        <div className="text-2xl sm:text-3xl font-bold text-foreground">{value}</div>
         {change && (
           <p
             className={cn(
