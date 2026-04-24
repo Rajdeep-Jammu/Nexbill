@@ -4,7 +4,7 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Momentum Inventory',
+  title: 'NexBill',
   description: 'A modern, premium inventory and billing system.',
 };
 
