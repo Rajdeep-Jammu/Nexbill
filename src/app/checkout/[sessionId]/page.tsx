@@ -1,24 +1,49 @@
 "use client";
 
 import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
 import CustomerLayout from '../../customer-layout';
 import PageHeader from "@/components/PageHeader";
 import CheckoutSessionDisplay from '@/components/checkout/CheckoutSessionDisplay';
-import { useSessionsStore } from '@/hooks/use-sessions-store';
+import { useSessionsStore, type CheckoutSession } from '@/hooks/use-sessions-store';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CheckoutPage() {
     const params = useParams();
     const sessionId = params.sessionId as string;
-
-    const getSession = useSessionsStore(state => state.getSession);
-    const { qrCodeUrl, upiId } = useAuthStore(state => ({ qrCodeUrl: state.qrCodeUrl, upiId: state.upiId }));
     
-    const session = getSession(sessionId);
+    // Defer accessing store state until client-side hydration
+    const [isLoading, setIsLoading] = useState(true);
+    const [session, setSession] = useState<CheckoutSession | undefined>(undefined);
+    const [paymentDetails, setPaymentDetails] = useState<{qrCodeUrl: string | null, upiId: string | null}>({qrCodeUrl: null, upiId: null});
+
+    useEffect(() => {
+        // This code runs only on the client, after the component has mounted.
+        const sessionData = useSessionsStore.getState().getSession(sessionId);
+        const { qrCodeUrl, upiId } = useAuthStore.getState();
+        setSession(sessionData);
+        setPaymentDetails({ qrCodeUrl, upiId });
+        setIsLoading(false);
+    }, [sessionId]);
+
+    if (isLoading) {
+        return (
+            <CustomerLayout>
+                {/* Render a consistent header during loading */}
+                <PageHeader title="Checkout" />
+                <div className="flex flex-col items-center gap-8">
+                    <Skeleton className="w-full max-w-sm h-40" />
+                    <Skeleton className="w-full max-w-sm h-80" />
+                </div>
+            </CustomerLayout>
+        );
+    }
 
     if (!session) {
         return (
@@ -40,7 +65,7 @@ export default function CheckoutPage() {
         )
     }
 
-    if (!qrCodeUrl && !upiId) {
+    if (!paymentDetails.qrCodeUrl && !paymentDetails.upiId) {
          return (
              <CustomerLayout>
                 <PageHeader title="Checkout" />
@@ -57,11 +82,10 @@ export default function CheckoutPage() {
          )
     }
     
-
     return (
         <CustomerLayout>
             <PageHeader title="Complete Your Payment" />
-            <CheckoutSessionDisplay session={session} qrCodeUrl={qrCodeUrl} upiId={upiId} />
+            <CheckoutSessionDisplay session={session} qrCodeUrl={paymentDetails.qrCodeUrl} upiId={paymentDetails.upiId} />
         </CustomerLayout>
     )
 }
