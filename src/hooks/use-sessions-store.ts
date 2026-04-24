@@ -10,11 +10,12 @@ export type CheckoutSession = {
   total: number;
   status: 'pending' | 'paid';
   createdAt: string;
+  userId?: string;
 };
 
 interface SessionsState {
   sessions: CheckoutSession[];
-  createSession: (items: CartItem[], total: number) => CheckoutSession;
+  createSession: (items: CartItem[], total: number, userId?: string) => CheckoutSession;
   getSession: (sessionId: string) => CheckoutSession | undefined;
   updateSessionStatus: (sessionId: string, status: 'paid') => void;
   clearSessions: () => void;
@@ -24,13 +25,14 @@ export const useSessionsStore = create<SessionsState>()(
   persist(
     (set, get) => ({
       sessions: [],
-      createSession: (items, total) => {
+      createSession: (items, total, userId) => {
         const newSession: CheckoutSession = {
           id: Math.random().toString(36).substring(2, 8).toUpperCase(),
           items,
           total,
           status: 'pending',
           createdAt: new Date().toISOString(),
+          userId,
         };
         set({ sessions: [...get().sessions, newSession] });
         return newSession;

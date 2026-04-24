@@ -10,16 +10,18 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { useSessionsStore } from "@/hooks/use-sessions-store";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/firebase";
 
 export default function Cart() {
   const { items, updateQuantity, removeFromCart, totalAmount, clearCart } = useBillingStore();
   const { toast } = useToast();
   const createSession = useSessionsStore((state) => state.createSession);
   const router = useRouter();
+  const { user } = useUser();
 
   const handleCheckout = () => {
     if (items.length > 0) {
-        const session = createSession(items, totalAmount());
+        const session = createSession(items, totalAmount(), user?.uid);
         clearCart();
         router.push(`/checkout/${session.id}`);
     } else {

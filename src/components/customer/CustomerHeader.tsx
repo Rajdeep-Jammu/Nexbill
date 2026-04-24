@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ShoppingBag, ShoppingCart, User as ProfileIcon } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ShoppingBag, ShoppingCart, User as ProfileIcon, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/Logo";
 import { useBillingStore } from "@/hooks/use-billing-store";
 import { cn } from "@/lib/utils";
+import { useUser, useAuth } from "@/firebase";
 
 const navItems = [
   { href: "/", icon: ShoppingBag, label: "Products" },
@@ -15,8 +16,16 @@ const navItems = [
 
 export function CustomerHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const { totalItems } = useBillingStore();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const cartItemCount = totalItems();
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push('/');
+  }
 
   return (
     <header className="hidden lg:flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur-lg z-40">
@@ -41,7 +50,7 @@ export function CustomerHeader() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
          <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart />
@@ -51,14 +60,32 @@ export function CustomerHeader() {
                 <span className="sr-only">Cart</span>
             </Button>
         </Link>
-        <Link href="/profile">
-            <Button variant="ghost" size="icon">
-                <ProfileIcon />
-                <span className="sr-only">Profile</span>
-            </Button>
-        </Link>
+        
+        {!isUserLoading && (
+          user ? (
+            <>
+              <Link href="/profile">
+                  <Button variant="ghost" size="icon">
+                      <ProfileIcon />
+                      <span className="sr-only">Profile</span>
+                  </Button>
+              </Link>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>Logout</Button>
+            </>
+          ) : (
+            <>
+               <Link href="/login">
+                  <Button variant="ghost" size="sm"><LogIn className="mr-2"/>Login</Button>
+              </Link>
+              <Link href="/signup">
+                  <Button variant="outline" size="sm"><UserPlus className="mr-2"/>Sign Up</Button>
+              </Link>
+            </>
+          )
+        )}
+        
         <Link href="/admin/login">
-          <Button variant="outline" size="sm">Admin Panel</Button>
+          <Button size="sm">Admin Panel</Button>
         </Link>
       </div>
     </header>

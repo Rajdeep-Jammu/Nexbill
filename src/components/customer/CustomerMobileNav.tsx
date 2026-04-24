@@ -6,23 +6,28 @@ import {
   ShoppingBag,
   ShoppingCart,
   User,
+  LogIn,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useBillingStore } from "@/hooks/use-billing-store";
 import { Badge } from "@/components/ui/badge";
+import { useUser } from "@/firebase";
 
 import { cn } from "@/lib/utils";
 
 export default function CustomerMobileNav() {
   const pathname = usePathname();
   const { totalItems } = useBillingStore();
+  const { user, isUserLoading } = useUser();
   const cartItemCount = totalItems();
   
   const navItems = [
     { href: "/", icon: ShoppingBag, label: "Products" },
     { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount },
-    { href: "/profile", icon: User, label: "Profile" },
+    { href: user ? "/profile" : "/login", icon: user ? User : LogIn, label: user ? "Profile" : "Login" },
   ];
+
+  if (isUserLoading) return null;
 
   return (
     <motion.div

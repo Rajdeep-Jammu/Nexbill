@@ -281,12 +281,42 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a customer's public profile and settings.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's Firebase Authentication UID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
+        }
+      },
+      "required": [
+        "uid",
+        "email"
+      ]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google.com"
     ]
   },
   "firestore": {
@@ -383,6 +413,14 @@
               "description": "The unique identifier of the bill item."
             }
           ]
+        }
+      },
+       {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": { "$ref": "#/backend/entities/UserProfile" },
+          "description": "Stores public profile information for each user."
         }
       }
     ],

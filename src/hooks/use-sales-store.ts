@@ -7,11 +7,12 @@ export type Sale = {
   items: CartItem[];
   total: number;
   date: string;
+  userId?: string;
 };
 
 interface SalesState {
   sales: Sale[];
-  addSale: (saleData: { items: CartItem[], total: number }) => void;
+  addSale: (saleData: { items: CartItem[], total: number, userId?: string }) => void;
   deleteSale: (saleId: string) => void;
   clearSales: () => void;
 }

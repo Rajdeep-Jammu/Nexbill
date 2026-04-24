@@ -1,37 +1,156 @@
-import CustomerLayout from "../customer-layout";
-import PageHeader from "@/components/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+'use client';
+
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useUser, useAuth } from '@/firebase';
+import { useSalesStore, type Sale } from '@/hooks/use-sales-store';
+import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState, useMemo } from 'react';
+
+import CustomerLayout from '../customer-layout';
+import PageHeader from '@/components/PageHeader';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Loader2, LogOut } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export default function ProfilePage() {
-  return (
-    <CustomerLayout>
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    toast({
+      title: 'Logged Out',
+      description: 'You have been successfully logged out.',
+    });
+    router.push('/');
+  };
+
+  const allSales = useSalesStore(state => state.sales);
+  const userSales = useMemo(() => {
+    if (!user) return [];
+    return allSales.filter(sale => sale.userId === user.uid);
+  }, [allSales, user]);
+  
+  if (!isClient || isUserLoading) {
+    return (
+      <CustomerLayout>
+        <div className="flex h-[60vh] w-full items-center justify-center bg-background">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </CustomerLayout>
+    );
+  }
+
+  if (!user) {
+    return (
+      <CustomerLayout>
         <PageHeader title="Profile" />
         <div className="flex items-center justify-center">
-            <Card className="w-full max-w-md text-center p-8">
+          <Card className="w-full max-w-md text-center p-8">
+            <CardHeader>
+              <Avatar className="h-24 w-24 mx-auto mb-4">
+                <AvatarFallback>U</AvatarFallback>
+              </Avatar>
+              <CardTitle className="text-2xl">Hello, Guest!</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-6">
+                Log in or create an account to see your orders and manage your details.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <Link href="/login">
+                  <Button>Login</Button>
+                </Link>
+                <Link href="/signup">
+                  <Button variant="secondary">Sign Up</Button>
+                </Link>
+              </div>
+              <p className="text-xs text-muted-foreground mt-8">
+                Are you a shop owner?{' '}
+                <Link href="/admin/login" className="text-primary hover:underline">
+                  Go to Admin Panel
+                </Link>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </CustomerLayout>
+    );
+  }
+
+  return (
+    <CustomerLayout>
+      <PageHeader title="My Profile" />
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+            <Card className="text-center p-8">
                 <CardHeader>
                     <Avatar className="h-24 w-24 mx-auto mb-4">
-                        <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                        <AvatarFallback>U</AvatarFallback>
+                         {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || user.email || 'User'} />}
+                        <AvatarFallback>{user.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
-                    <CardTitle className="text-2xl">Hello, Guest!</CardTitle>
+                    <CardTitle className="text-2xl">{user.displayName || 'Welcome'}</CardTitle>
+                    <CardDescription>{user.email}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground mb-6">
-                        Log in or create an account to see your orders and manage your details.
-                    </p>
-                    <div className="flex gap-4 justify-center">
-                        <Button disabled>Login</Button>
-                        <Button variant="secondary" disabled>Sign Up</Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-8">
-                        Are you a shop owner? <Link href="/admin/login" className="text-primary hover:underline">Go to Admin Panel</Link>
-                    </p>
+                    <Button onClick={handleLogout} variant="outline">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                    </Button>
                 </CardContent>
             </Card>
         </div>
+        <div className="lg:col-span-2">
+            <h2 className="font-headline text-2xl font-semibold mb-4">Purchase History</h2>
+            {userSales.length > 0 ? (
+                <Card>
+                    <CardContent className="p-0">
+                         <Accordion type="single" collapsible className="w-full">
+                            {userSales.map((sale) => (
+                                <AccordionItem value={sale.id} key={sale.id}>
+                                <AccordionTrigger className="px-6 py-4">
+                                    <div className="flex justify-between w-full">
+                                    <div>
+                                        <p className="font-mono text-sm">{sale.id}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {new Date(sale.date).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <p className="font-semibold self-center">₹{sale.total.toLocaleString()}</p>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-6 pb-4">
+                                    <ul className="space-y-2 text-sm">
+                                        {sale.items.map(item => (
+                                            <li key={item.id} className="flex justify-between">
+                                                <span>{item.name} x {item.cartQuantity}</span>
+                                                <span className="text-muted-foreground">₹{(item.price * item.cartQuantity).toLocaleString()}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </CardContent>
+                </Card>
+            ) : (
+                 <div className="flex h-48 items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/50">
+                    <p className="text-muted-foreground">You haven&apos;t made any purchases yet.</p>
+                </div>
+            )}
+        </div>
+      </div>
     </CustomerLayout>
   );
 }

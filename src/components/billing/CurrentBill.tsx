@@ -15,6 +15,7 @@ import { useSessionsStore } from "@/hooks/use-sessions-store";
 export default function CurrentBill() {
   const { items, updateQuantity, removeFromCart, totalAmount, clearCart, activeSessionId } = useBillingStore();
   const addSale = useSalesStore((state) => state.addSale);
+  const getSession = useSessionsStore(state => state.getSession);
   const updateSessionStatus = useSessionsStore(state => state.updateSessionStatus);
   const [billData, setBillData] = useState<{ items: CartItem[], total: number} | null>(null);
 
@@ -27,7 +28,8 @@ export default function CurrentBill() {
   
   const onDialogClose = () => {
     if (billData) {
-      addSale(billData);
+      const session = activeSessionId ? getSession(activeSessionId) : undefined;
+      addSale({ ...billData, userId: session?.userId });
        if (activeSessionId) {
         updateSessionStatus(activeSessionId, 'paid');
       }
