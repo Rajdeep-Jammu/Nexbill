@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
-  const { shopName, pin: storedPin, login } = useAuthStore();
+  const { shopName, pin: storedPin, login, biometricEnabled } = useAuthStore();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -93,15 +93,17 @@ export default function LoginPage() {
           >
             {isLoggingIn ? <Loader2 className="animate-spin" /> : "Login"}
           </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full gap-2 text-base font-bold"
-            onClick={handleBiometric}
-          >
-            <Fingerprint className="h-5 w-5 text-primary" />
-            Use Biometric
-          </Button>
+          {biometricEnabled && (
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full gap-2 text-base font-bold"
+              onClick={handleBiometric}
+            >
+              <Fingerprint className="h-5 w-5 text-primary" />
+              Use Biometric
+            </Button>
+          )}
         </div>
         <p className="mt-6 text-sm text-muted-foreground">
           Not your shop?{" "}

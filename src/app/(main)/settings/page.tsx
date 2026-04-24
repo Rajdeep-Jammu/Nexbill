@@ -20,12 +20,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut } from "lucide-react";
+import { LogOut, KeyRound } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ChangePinDialog } from "@/components/settings/ChangePinDialog";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { shopName, reset: resetAuth, logout } = useAuthStore();
+  const { shopName, reset: resetAuth, logout, biometricEnabled, toggleBiometric } = useAuthStore();
   const { clearSales } = useSalesStore();
   const { clearCart } = useBillingStore();
 
@@ -63,6 +66,28 @@ export default function SettingsPage() {
               <LogOut className="mr-2 h-4 w-4" />
               Log Out
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Security</CardTitle>
+            <CardDescription>Manage your application's security settings.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+             <div className="flex items-center justify-between">
+              <Label htmlFor="biometric-switch" className="flex flex-col gap-1 pr-4">
+                <span className="font-semibold">Enable Biometric Login</span>
+                <span className="text-sm text-muted-foreground">Use your device's biometrics for quick access.</span>
+              </Label>
+              <Switch id="biometric-switch" checked={biometricEnabled || false} onCheckedChange={toggleBiometric} />
+            </div>
+             <ChangePinDialog>
+                <Button variant="outline">
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    Change PIN
+                </Button>
+             </ChangePinDialog>
           </CardContent>
         </Card>
 
