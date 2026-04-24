@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "prod_001",
+      "description": "A pair of modern running shoes.",
+      "imageUrl": "https://picsum.photos/seed/shoes/400/400",
+      "imageHint": "running shoes"
+    },
+    {
+      "id": "prod_002",
+      "description": "A sleek and smart watch.",
+      "imageUrl": "https://picsum.photos/seed/watch/400/400",
+      "imageHint": "smart watch"
+    },
+    {
+      "id": "prod_003",
+      "description": "A ceramic coffee mug.",
+      "imageUrl": "https://picsum.photos/seed/mug/400/400",
+      "imageHint": "coffee mug"
+    },
+    {
+      "id": "prod_004",
+      "description": "A wireless headphone set.",
+      "imageUrl": "https://picsum.photos/seed/headphones/400/400",
+      "imageHint": "wireless headphones"
+    },
+    {
+      "id": "prod_005",
+      "description": "A stylish leather backpack.",
+      "imageUrl": "https://picsum.photos/seed/backpack/400/400",
+      "imageHint": "stylish backpack"
+    },
+    {
+      "id": "prod_006",
+      "description": "A modern office chair.",
+      "imageUrl": "https://picsum.photos/seed/chair/400/400",
+      "imageHint": "office chair"
+    },
+    {
+      "id": "prod_007",
+      "description": "A professional camera lens.",
+      "imageUrl": "https://picsum.photos/seed/lens/400/400",
+      "imageHint": "camera lens"
+    },
+    {
+      "id": "prod_008",
+      "description": "A minimalist desk lamp.",
+      "imageUrl": "https://picsum.photos/seed/lamp/400/400",
+      "imageHint": "desk lamp"
+    }
+  ]
 }
