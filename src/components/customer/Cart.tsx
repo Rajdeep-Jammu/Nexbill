@@ -49,36 +49,38 @@ export default function Cart() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2">
-            <Card>
+            <Card className="bg-card/50 backdrop-blur-lg border-white/10">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 font-headline text-xl">
                         Cart Items ({items.length})
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="divide-y divide-border">
+                <CardContent className="divide-y divide-border/50">
                     {items.map((item) => (
-                        <div key={item.id} className="flex items-start sm:items-center gap-4 flex-col sm:flex-row py-4 first:pt-0 last:pb-0">
+                        <div key={item.id} className="flex items-start sm:items-center gap-4 py-4 first:pt-0 last:pb-0">
                         <Image
                             src={item.imageUrl}
                             alt={item.name}
-                            width={80}
-                            height={80}
-                            className="rounded-lg object-cover aspect-square border"
+                            width={64}
+                            height={64}
+                            className="rounded-lg object-cover aspect-square border border-border/50"
                         />
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-1">
                             <p className="font-semibold">{item.name}</p>
                             <p className="text-sm text-muted-foreground">
                             ₹{item.price.toLocaleString()}
                             </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.cartQuantity - 1)}>
-                            <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="w-8 text-center text-sm font-bold">{item.cartQuantity}</span>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.cartQuantity + 1)} disabled={item.cartQuantity >= item.quantity}>
-                            <Plus className="h-4 w-4" />
-                            </Button>
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                            <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.cartQuantity - 1)}>
+                                <Minus className="h-4 w-4" />
+                                </Button>
+                                <span className="w-8 text-center text-sm font-bold">{item.cartQuantity}</span>
+                                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.cartQuantity + 1)} disabled={item.cartQuantity >= item.quantity}>
+                                <Plus className="h-4 w-4" />
+                                </Button>
+                            </div>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeFromCart(item.id)}>
                             <Trash2 className="h-4 w-4" />
                             </Button>
@@ -89,7 +91,7 @@ export default function Cart() {
             </Card>
         </div>
         <div className="lg:col-span-1">
-            <Card className="sticky top-24">
+            <Card className="sticky top-24 bg-card/50 backdrop-blur-lg border-white/10">
                 <CardHeader>
                     <CardTitle>Order Summary</CardTitle>
                 </CardHeader>

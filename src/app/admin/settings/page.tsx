@@ -64,7 +64,7 @@ export default function SettingsPage() {
     <div>
       <PageHeader title="Settings" />
       <div className="space-y-8">
-        <Card>
+        <Card className="bg-card/50 backdrop-blur-lg border-white/10">
           <CardHeader>
             <CardTitle>Shop Information</CardTitle>
             <CardDescription>Details about your currently configured shop.</CardDescription>
@@ -81,7 +81,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card/50 backdrop-blur-lg border-white/10">
           <CardHeader>
             <CardTitle>Security</CardTitle>
             <CardDescription>Manage your application's security settings.</CardDescription>
@@ -103,7 +103,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card/50 backdrop-blur-lg border-white/10">
             <CardHeader>
                 <CardTitle>Payment Settings</CardTitle>
                 <CardDescription>Configure QR code and UPI details for receiving payments.</CardDescription>
@@ -121,7 +121,7 @@ export default function SettingsPage() {
             </CardContent>
         </Card>
 
-        <Card className="border-destructive">
+        <Card className="border-destructive bg-card/50 backdrop-blur-lg">
           <CardHeader>
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
             <CardDescription>These actions are irreversible. Please be certain.</CardDescription>

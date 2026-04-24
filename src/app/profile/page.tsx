@@ -56,7 +56,7 @@ export default function ProfilePage() {
       <CustomerLayout>
         <PageHeader title="Profile" />
         <div className="flex items-center justify-center">
-          <Card className="w-full max-w-md text-center p-8">
+          <Card className="w-full max-w-md text-center p-8 bg-card/50 backdrop-blur-lg border-white/10">
             <CardHeader>
               <Avatar className="h-24 w-24 mx-auto mb-4">
                 <AvatarFallback>U</AvatarFallback>
@@ -93,7 +93,7 @@ export default function ProfilePage() {
       <PageHeader title="My Profile" />
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-1">
-            <Card className="text-center p-8">
+            <Card className="text-center p-6 md:p-8 bg-card/50 backdrop-blur-lg border-white/10">
                 <CardHeader>
                     <Avatar className="h-24 w-24 mx-auto mb-4">
                          {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || user.email || 'User'} />}
@@ -113,20 +113,20 @@ export default function ProfilePage() {
         <div className="lg:col-span-2">
             <h2 className="font-headline text-2xl font-semibold mb-4">Purchase History</h2>
             {userSales.length > 0 ? (
-                <Card>
+                <Card className="bg-card/50 backdrop-blur-lg border-white/10">
                     <CardContent className="p-0">
                          <Accordion type="single" collapsible className="w-full">
                             {userSales.map((sale) => (
                                 <AccordionItem value={sale.id} key={sale.id}>
-                                <AccordionTrigger className="px-6 py-4">
-                                    <div className="flex justify-between w-full">
-                                    <div>
-                                        <p className="font-mono text-sm">{sale.id}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {new Date(sale.date).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <p className="font-semibold self-center">₹{sale.total.toLocaleString()}</p>
+                                <AccordionTrigger className="px-4 md:px-6 py-4">
+                                    <div className="flex justify-between w-full items-center">
+                                      <div className="text-left">
+                                          <p className="font-mono text-sm">{sale.id}</p>
+                                          <p className="text-xs text-muted-foreground">
+                                              {new Date(sale.date).toLocaleDateString()}
+                                          </p>
+                                      </div>
+                                      <p className="font-semibold self-center pr-4">₹{sale.total.toLocaleString()}</p>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="px-6 pb-4">

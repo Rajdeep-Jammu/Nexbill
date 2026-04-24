@@ -27,7 +27,7 @@ export default function CheckoutSessionDisplay({ session, qrCodeUrl, upiId }: Ch
 
     return (
         <div className="flex flex-col items-center gap-8">
-            <Card className="w-full max-w-sm text-center">
+            <Card className="w-full max-w-sm text-center bg-card/50 backdrop-blur-lg border-white/10">
                  <CardHeader>
                     <CardTitle className="text-xl">Show this code to the shopkeeper</CardTitle>
                     <CardDescription>This code contains your cart details.</CardDescription>
@@ -42,7 +42,7 @@ export default function CheckoutSessionDisplay({ session, qrCodeUrl, upiId }: Ch
                 </CardContent>
             </Card>
 
-             <Card className="w-full max-w-sm text-center">
+             <Card className="w-full max-w-sm text-center bg-card/50 backdrop-blur-lg border-white/10">
                  <CardHeader>
                     <CardTitle className="text-xl">Scan to Pay</CardTitle>
                     <CardDescription>Complete your payment of ₹{session.total.toLocaleString()} using the QR code or UPI ID.</CardDescription>

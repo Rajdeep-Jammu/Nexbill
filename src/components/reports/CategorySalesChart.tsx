@@ -41,7 +41,7 @@ export default function CategorySalesChart({ sales }: CategorySalesChartProps) {
     }
 
     return (
-        <Card>
+        <Card className="bg-card/50 backdrop-blur-lg border-white/10">
             <CardHeader>
                 <CardTitle className="font-headline text-xl sm:text-2xl">Sales by Category</CardTitle>
             </CardHeader>

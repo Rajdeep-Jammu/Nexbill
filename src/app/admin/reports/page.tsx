@@ -85,7 +85,7 @@ export default function ReportsPage() {
                 <h2 className="font-headline text-xl sm:text-2xl font-semibold text-foreground mb-4">
                     Product Sales Breakdown
                 </h2>
-                <Card className="overflow-hidden">
+                <Card className="overflow-hidden bg-card/50 backdrop-blur-lg border-white/10">
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>

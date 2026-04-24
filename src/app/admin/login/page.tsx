@@ -72,7 +72,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-border bg-card/50 p-8 shadow-2xl"
+        className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-white/10 bg-card/50 p-8 shadow-2xl backdrop-blur-lg"
       >
         <Logo className="h-12 w-12 text-primary" />
         <h1 className="mt-6 font-headline text-3xl font-bold text-foreground">

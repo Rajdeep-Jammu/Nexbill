@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Plus } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,35 +40,44 @@ export default function CustomerProductCard({ product }: CustomerProductCardProp
   };
 
   return (
-    <Card className="overflow-hidden rounded-xl border-border bg-card/50 shadow-md">
-      <CardContent className="p-0">
-        <div className="relative">
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            width={400}
-            height={400}
-            className="aspect-square w-full object-cover"
-            data-ai-hint={product.imageHint}
-          />
-          {stock <= 0 && (
-            <Badge variant="destructive" className="absolute top-2 left-2">Out of Stock</Badge>
-          )}
-        </div>
-        <div className="p-3 space-y-2">
-          <h3 className="font-semibold text-sm truncate text-foreground">
-            {product.name}
-          </h3>
-          <div className="flex items-center justify-between">
-            <p className="text-base font-bold text-foreground">
-              ₹{product.price.toLocaleString()}
-            </p>
-            <Button size="icon" onClick={handleAddToCart} disabled={stock <= 0} className="h-8 w-8">
-              <Plus className="h-4 w-4" />
-            </Button>
+    <motion.div
+      whileHover={{ y: -5, scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300 }}
+      className="h-full"
+    >
+      <Card className="overflow-hidden rounded-2xl h-full flex flex-col border-white/10 bg-card/50 shadow-lg backdrop-blur-lg">
+        <CardContent className="p-0 flex flex-col flex-grow">
+          <div className="relative">
+            <Image
+              src={product.imageUrl}
+              alt={product.name}
+              width={400}
+              height={400}
+              className="aspect-square w-full object-cover"
+              data-ai-hint={product.imageHint}
+            />
+            {stock <= 0 && (
+              <Badge variant="destructive" className="absolute top-3 left-3">Out of Stock</Badge>
+            )}
+             {stock > 0 && stock <= 10 && (
+                <Badge variant="secondary" className="absolute top-3 left-3 bg-yellow-500 text-black">Low Stock</Badge>
+            )}
           </div>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="p-4 space-y-3 flex flex-col flex-grow">
+            <h3 className="font-semibold text-sm md:text-base truncate text-foreground flex-grow">
+              {product.name}
+            </h3>
+            <div className="flex items-center justify-between">
+              <p className="text-base md:text-lg font-bold text-foreground">
+                ₹{product.price.toLocaleString()}
+              </p>
+              <Button size="icon" onClick={handleAddToCart} disabled={stock <= 0} className="h-8 w-8 md:h-9 md:w-9 shrink-0">
+                <Plus className="h-4 md:h-5 w-4 md:w-5" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

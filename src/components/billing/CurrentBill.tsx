@@ -39,7 +39,7 @@ export default function CurrentBill() {
   }
 
   return (
-    <Card className="sticky top-4">
+    <Card className="sticky top-4 bg-card/50 backdrop-blur-lg border-white/10">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline text-xl">
           <ShoppingBag className="h-5 w-5" />
