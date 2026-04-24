@@ -14,21 +14,17 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const [pin, setPin] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
-  const { shopName, pin: storedPin, login, biometricEnabled } = useAuthStore();
+  const { shopName, pin: storedPin, login, biometricEnabled, initialized } = useAuthStore();
   const { toast } = useToast();
 
   useEffect(() => {
-    // This effect runs on the client after hydration
-    const authState = useAuthStore.getState();
-    if (!authState.shopName || !authState.pin) {
+    // Wait until the store is rehydrated from localStorage before checking credentials
+    if (initialized && (!shopName || !storedPin)) {
       router.replace("/admin/setup");
-    } else {
-      setIsLoading(false);
     }
-  }, [router]);
+  }, [initialized, shopName, storedPin, router]);
 
   const handleLogin = () => {
     setIsLoggingIn(true);
@@ -58,7 +54,8 @@ export default function LoginPage() {
     }
   }
 
-  if (isLoading) {
+  // Show a loader while the auth store is initializing to prevent race conditions
+  if (!initialized) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
