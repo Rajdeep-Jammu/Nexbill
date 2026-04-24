@@ -1,41 +1,74 @@
-import { DollarSign, Package, ShoppingCart, TrendingUp, Eye } from "lucide-react";
+'use client';
+
+import { DollarSign, Package, ShoppingCart, TrendingUp, Eye, User } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/dashboard/StatCard";
 import SalesChart from "@/components/dashboard/SalesChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useAuthStore } from "@/hooks/use-auth-store";
+import { useFirestore, useCollection } from "@/firebase";
+import { useMemo } from "react";
+import { collection, query, where } from "firebase/firestore";
+import type { Product } from "@/lib/types";
 
 export default function DashboardPage() {
-  // Mock data for demonstration
-  const stats = [
-    {
-      title: "Today's Sales",
-      value: "₹12,545",
-      change: "+15% from last week",
-      icon: <DollarSign className="h-5 w-5 text-primary" />,
-    },
-    {
-      title: "Total Products",
-      value: "842",
-      change: "+5 new from last week",
-      icon: <Package className="h-5 w-5 text-primary" />,
-    },
-    {
-      title: "Inventory Value",
-      value: "₹8,34,980",
-      change: "",
-      icon: <ShoppingCart className="h-5 w-5 text-primary" />,
-    },
-    {
-      title: "Low Stock",
-      value: "12 items",
-      change: "2 critical",
-      isWarning: true,
-      icon: <TrendingUp className="h-5 w-5 text-destructive" />,
-    },
-  ];
+  const shopId = useAuthStore((state) => state.shopId);
+  const firestore = useFirestore();
 
+  const productsQuery = useMemo(() => {
+    if (!shopId) return null;
+    return query(collection(firestore, 'shops', shopId, 'products'));
+  }, [firestore, shopId]);
+  const { data: products } = useCollection<Product>(productsQuery);
+
+  const billsQuery = useMemo(() => {
+    if (!shopId) return null;
+    return query(collection(firestore, 'shops', shopId, 'bills'));
+  }, [firestore, shopId]);
+  const { data: bills } = useCollection<any>(billsQuery);
+
+  const stats = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todaysSales = bills?.filter(bill => new Date(bill.billDate) >= today) || [];
+    const todaysRevenue = todaysSales.reduce((sum, bill) => sum + bill.totalAmount, 0);
+
+    const totalProducts = products?.length || 0;
+    const inventoryValue = products?.reduce((sum, p) => sum + p.price * p.quantity, 0) || 0;
+    const lowStockItems = products?.filter(p => p.quantity > 0 && p.quantity <= 10).length || 0;
+
+    return [
+      {
+        title: "Today's Sales",
+        value: `₹${todaysRevenue.toLocaleString()}`,
+        change: `${todaysSales.length} bills`,
+        icon: <DollarSign className="h-5 w-5 text-primary" />,
+      },
+      {
+        title: "Total Products",
+        value: totalProducts,
+        change: ``,
+        icon: <Package className="h-5 w-5 text-primary" />,
+      },
+      {
+        title: "Inventory Value",
+        value: `₹${inventoryValue.toLocaleString()}`,
+        change: "",
+        icon: <ShoppingCart className="h-5 w-5 text-primary" />,
+      },
+      {
+        title: "Low Stock",
+        value: `${lowStockItems} items`,
+        change: products?.filter(p => p.quantity === 0).length + " out of stock",
+        isWarning: lowStockItems > 0,
+        icon: <TrendingUp className="h-5 w-5 text-destructive" />,
+      },
+    ];
+  }, [products, bills]);
+  
   return (
     <div>
       <PageHeader title="Dashboard">
@@ -51,7 +84,7 @@ export default function DashboardPage() {
           <StatCard
             key={stat.title}
             title={stat.title}
-            value={stat.value}
+            value={stat.value.toString()}
             change={stat.change}
             icon={stat.icon}
             isWarning={stat.isWarning}
@@ -68,7 +101,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="h-64 sm:h-80">
-              <SalesChart />
+              <SalesChart bills={bills || []} />
             </div>
           </CardContent>
         </Card>

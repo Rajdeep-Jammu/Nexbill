@@ -18,7 +18,7 @@
  * - No Global Listing: Listing all shops in the root collection is disallowed to protect tenant privacy.
  * - Owner-Centric Writes: All write operations (create, update, delete) on shop-related data
  *   are restricted to the designated shop owner.
- * - Customer Read-Only Access: Authenticated customers are granted read-only (`get`) access
+ * - Customer Read-Only Access: Authenticated customers are granted read-only (`get`, `list`) access
  *   to their own bills and bill items, but they cannot list all bills in a shop.
  *
  * Denormalization for Authorization:
@@ -72,7 +72,8 @@ service cloud.firestore {
      * to authorize collection-level 'list' operations.
      */
     function isShopOwner(shopId) {
-      return isSignedIn() && get(/databases/$(database)/documents/shops/$(shopId)).data.shopOwnerId == request.auth.uid;
+      let shopDoc = get(/databases/$(database)/documents/shops/$(shopId));
+      return isSignedIn() && shopDoc.data.shopOwnerId == request.auth.uid;
     }
 
     /**
@@ -95,6 +96,17 @@ service cloud.firestore {
     // --------------------------------
     // Collection Rules
     // --------------------------------
+    
+    /**
+     * @description Public configuration data, readable by anyone.
+     * @path /public/{docId}
+     * @allow (get) Anyone can read public config (like activeShopId).
+     * @allow (write) Only the shop owner can update the config.
+     */
+    match /public/{docId} {
+        allow get: if true;
+        allow write: if isShopOwner(request.resource.data.activeShopId);
+    }
 
     /**
      * @description Controls access to a Shop document, the root for all tenant data.
@@ -106,79 +118,82 @@ service cloud.firestore {
      * @principle Enforces strict document ownership and prevents cross-tenant data visibility.
      */
     match /shops/{shopId} {
-      allow get: if isDocumentOwner(resource.data);
-      allow list: if false;
+      allow get: if isShopOwner(shopId);
+      allow list: if false; // Disallow listing all shops
       allow create: if isSignedIn() && isAuthOwner(request.resource.data.shopOwnerId) && request.resource.data.id == shopId;
-      allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.shopOwnerId == resource.data.shopOwnerId;
-      allow delete: if documentExists() && isDocumentOwner(resource.data);
+      allow update: if documentExists() && isShopOwner(shopId) && request.resource.data.shopOwnerId == resource.data.shopOwnerId;
+      allow delete: if documentExists() && isShopOwner(shopId);
     }
 
     /**
      * @description Manages products within a specific shop.
      * @path /shops/{shopId}/products/{productId}
-     * @allow (create) The shop owner can add new products to their shop.
-     * @allow (list) The shop owner can list all products in their own shop.
-     * @deny (get) A user cannot read product details from a shop they do not own.
-     * @deny (delete) A user cannot delete products from another user's shop.
-     * @principle Restricts all data access within a subcollection to the parent document's owner.
+     * @allow (get, list) Anyone can view the products of a shop.
+     * @allow (write) Only the shop owner can manage products.
+     * @principle Public read access for inventory, owner-only writes.
      */
     match /shops/{shopId}/products/{productId} {
-      allow get: if isDocumentOwner(resource.data);
-      allow list: if isShopOwner(shopId);
-      allow create: if isShopOwner(shopId) && request.resource.data.shopId == shopId;
-      allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.shopId == resource.data.shopId;
-      allow delete: if documentExists() && isDocumentOwner(resource.data);
+      allow get: if true;
+      allow list: if true;
+      allow create: if isShopOwner(shopId) && isAuthOwner(request.resource.data.shopOwnerId);
+      allow update: if documentExists() && isShopOwner(shopId) && isDocumentOwner(resource.data);
+      allow delete: if documentExists() && isShopOwner(shopId) && isDocumentOwner(resource.data);
     }
 
     /**
      * @description Manages customer records associated with a specific shop.
      * @path /shops/{shopId}/customers/{customerId}
-     * @allow (create) The shop owner can add new customer records.
-     * @allow (list) The shop owner can list all their customers.
-     * @deny (update) A customer cannot modify their own record; only the shop owner can.
-     * @deny (get) A user cannot view customer data from a shop they do not own.
-     * @principle Restricts all data access within a subcollection to the parent document's owner.
+     * @allow (create, list, get, update, delete) The shop owner can manage their customer records.
+     * @principle Restricts all customer data management to the parent document's owner.
      */
     match /shops/{shopId}/customers/{customerId} {
-      allow get: if isDocumentOwner(resource.data);
+      allow get: if isShopOwner(shopId);
       allow list: if isShopOwner(shopId);
-      allow create: if isShopOwner(shopId) && request.resource.data.shopId == shopId;
-      allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.shopId == resource.data.shopId;
-      allow delete: if documentExists() && isDocumentOwner(resource.data);
+      allow create: if isShopOwner(shopId);
+      allow update: if documentExists() && isShopOwner(shopId);
+      allow delete: if documentExists() && isShopOwner(shopId);
     }
 
     /**
      * @description Controls access to bills (invoices), allowing access for both shop owners and the relevant customer.
      * @path /shops/{shopId}/bills/{billId}
      * @allow (get) The shop owner OR the authenticated customer associated with the bill can read it.
-     * @allow (list) ONLY the shop owner can list all bills for their shop. Customers cannot.
+     * @allow (list) Shop owner can list all bills. Customers can list THEIR bills.
      * @allow (create) The shop owner can create new bills.
-     * @deny (get) An unassociated customer cannot read another customer's bill.
-     * @deny (update) A customer cannot modify their own bill.
      * @principle Implements a hybrid access model: full ownership for the shop owner and read-only access for a specific collaborator (the customer).
      */
     match /shops/{shopId}/bills/{billId} {
-      allow get: if isDocumentOwner(resource.data) || isDocumentCustomer(resource.data);
-      allow list: if isShopOwner(shopId);
-      allow create: if isShopOwner(shopId) && request.resource.data.shopId == shopId;
-      allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.shopId == resource.data.shopId;
-      allow delete: if documentExists() && isDocumentOwner(resource.data);
+      allow get: if isShopOwner(shopId) || isDocumentCustomer(resource.data);
+      allow list: if isShopOwner(shopId) || (isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'customerAuthUid' && request.query.where[0][2] == request.auth.uid);
+      allow create: if isShopOwner(shopId);
+      allow update: if documentExists() && isShopOwner(shopId);
+      allow delete: if documentExists() && isShopOwner(shopId);
 
       /**
        * @description Controls access to the line items of a bill.
        * @path /shops/{shopId}/bills/{billId}/billItems/{billItemId}
-       * @allow (get) The shop owner OR the associated customer can view the bill's line items.
-       * @allow (list) The shop owner can list all items for a specific bill.
-       * @deny (create) A customer cannot add items to their own bill.
+       * @allow (get, list) The shop owner OR the associated customer can view the bill's line items.
+       * @allow (create) The shop owner can add items to their own bill.
        * @principle Inherits the hybrid access model from the parent bill, secured by denormalized IDs.
        */
       match /billItems/{billItemId} {
-        allow get: if isDocumentOwner(resource.data) || isDocumentCustomer(resource.data);
-        allow list: if isShopOwner(shopId);
-        allow create: if isShopOwner(shopId) && request.resource.data.billId == billId;
-        allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.billId == resource.data.billId;
-        allow delete: if documentExists() && isDocumentOwner(resource.data);
+        allow get: if isShopOwner(shopId) || isDocumentCustomer(get(/databases/$(database)/documents/shops/$(shopId)/bills/$(billId)).data);
+        allow list: if isShopOwner(shopId) || isDocumentCustomer(get(/databases/$(database)/documents/shops/$(shopId)/bills/$(billId)).data);
+        allow create: if isShopOwner(shopId);
+        allow update: if documentExists() && isShopOwner(shopId);
+        allow delete: if documentExists() && isShopOwner(shopId);
       }
+    }
+    
+    /**
+     * @description Controls access to user profiles.
+     * @path /users/{userId}
+     * @allow (get) Any signed-in user can read any profile (profiles are public).
+     * @allow (write) A user can only write to their own profile.
+     */
+    match /users/{userId} {
+        allow get: if isSignedIn();
+        allow write: if isAuthOwner(userId);
     }
   }
 }

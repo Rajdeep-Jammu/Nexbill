@@ -1,57 +1,31 @@
-"use client";
+'use client';
 
-import { useFormStatus } from "react-dom";
-import { useEffect, useRef, useActionState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Wand2, Loader2 } from "lucide-react";
+import { useFormStatus } from 'react-dom';
+import { useEffect, useRef, useActionState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Wand2, Loader2 } from 'lucide-react';
 
-import { productSchema, type Product } from "@/app/admin/inventory/product-schema";
-import { addProduct, generateDescriptionAction } from "@/app/admin/inventory/actions";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { productSchema, type Product } from '@/app/admin/inventory/product-schema';
+import { addProduct, generateDescriptionAction } from '@/app/admin/inventory/actions';
+import { useToast } from '@/hooks/use-toast';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/hooks/use-auth-store';
 
 const initialState = {
-  message: "",
+  message: '',
 };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending ? <Loader2 className="animate-spin" /> : "Add Product"}
+      {pending ? <Loader2 className="animate-spin" /> : 'Add Product'}
     </Button>
   );
-}
-
-function GenerateButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button
-          type="submit"
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          disabled={pending}
-        >
-          {pending ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <Wand2 className="h-4 w-4 text-primary" />
-          )}
-          Generate with AI
-        </Button>
-    )
 }
 
 export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void }) {
@@ -59,42 +33,43 @@ export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void })
   const [formState, formAction] = useActionState(addProduct, initialState);
   const [genState, genAction] = useActionState(generateDescriptionAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
-  
+  const { shopId, shopOwnerId } = useAuthStore();
+
   const form = useForm<Product>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      productName: "",
+      productName: '',
       price: 0,
       quantity: 0,
-      category: "",
-      features: "",
-      description: "",
+      category: '',
+      features: '',
+      description: '',
     },
   });
 
   useEffect(() => {
-    if (formState.message === "Product added successfully!") {
+    if (formState.message === 'Product added successfully!') {
       toast({
-        title: "Success",
+        title: 'Success',
         description: formState.message,
       });
       form.reset();
       onFormSuccess();
     } else if (formState.issues) {
       toast({
-        variant: "destructive",
-        title: "Error",
+        variant: 'destructive',
+        title: 'Error',
         description: formState.message,
       });
     }
   }, [formState, toast, form, onFormSuccess]);
-  
+
   useEffect(() => {
     if (genState?.description) {
-      form.setValue("description", genState.description);
+      form.setValue('description', genState.description);
       toast({
-        title: "Description Generated!",
-        description: "The AI-generated description has been added.",
+        title: 'Description Generated!',
+        description: 'The AI-generated description has been added.',
       });
     }
     if (genState?.fields) {
@@ -105,11 +80,11 @@ export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void })
 
   return (
     <Form {...form}>
-      <form
-        ref={formRef}
-        action={formAction}
-        className="grid grid-cols-1 sm:grid-cols-2 gap-6 py-4"
-      >
+      <form ref={formRef} action={formAction} className="grid grid-cols-1 sm:grid-cols-2 gap-6 py-4">
+        {/* Hidden fields for shop context */}
+        <input type="hidden" name="shopId" value={shopId || ''} />
+        <input type="hidden" name="shopOwnerId" value={shopOwnerId || ''} />
+        
         <FormField
           control={form.control}
           name="productName"
@@ -182,23 +157,13 @@ export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void })
             <FormItem className="sm:col-span-2">
               <div className="flex items-center justify-between">
                 <FormLabel>Description</FormLabel>
-                <Button
-                    type="submit"
-                    formAction={genAction}
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    >
-                    <Wand2 className="h-4 w-4 text-primary" />
-                    Generate with AI
+                <Button type="submit" formAction={genAction} variant="outline" size="sm" className="gap-2">
+                  <Wand2 className="h-4 w-4 text-primary" />
+                  Generate with AI
                 </Button>
               </div>
               <FormControl>
-                <Textarea
-                  placeholder="A creative and informative product description..."
-                  className="min-h-24"
-                  {...field}
-                />
+                <Textarea placeholder="A creative and informative product description..." className="min-h-24" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -206,7 +171,7 @@ export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void })
         />
 
         <div className="sm:col-span-2 flex justify-end">
-            <SubmitButton />
+          <SubmitButton />
         </div>
       </form>
     </Form>

@@ -1,15 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useSalesStore, type Sale } from "@/hooks/use-sales-store";
+import { useState } from 'react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Printer, Trash2 } from "lucide-react";
+} from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { Printer, Trash2, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,24 +18,67 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import BillGeneratedDialog from "./BillGeneratedDialog";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/alert-dialog';
+import BillGeneratedDialog from './BillGeneratedDialog';
+import { useToast } from '@/hooks/use-toast';
+import type { Bill, BillItem } from '@/lib/types';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useAuthStore } from '@/hooks/use-auth-store';
+import { collection, query, doc, deleteDoc } from 'firebase/firestore';
 
-export default function PastBills() {
-  const { sales, deleteSale } = useSalesStore();
+interface PastBillsProps {
+    sales: Bill[];
+}
+
+function BillItems({ shopId, billId }: { shopId: string, billId: string }) {
+    const firestore = useFirestore();
+    const itemsQuery = useMemoFirebase(() => {
+        return query(collection(firestore, 'shops', shopId, 'bills', billId, 'billItems'));
+    }, [firestore, shopId, billId]);
+    
+    const { data: items, isLoading } = useCollection<BillItem>(itemsQuery);
+
+    if (isLoading) return <Loader2 className="animate-spin my-4 mx-auto" />;
+
+    return (
+        <ul className="space-y-2 text-sm pl-4 pt-2">
+            {items?.map(item => (
+                <li key={item.id} className="flex justify-between">
+                    <span>{item.productName} x {item.quantity}</span>
+                    <span className="text-muted-foreground">₹{(item.unitPrice * item.quantity).toLocaleString()}</span>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+
+export default function PastBills({ sales }: PastBillsProps) {
   const { toast } = useToast();
-  const [billToView, setBillToView] = useState<Sale | null>(null);
+  const firestore = useFirestore();
+  const { shopId } = useAuthStore();
+  const [billToView, setBillToView] = useState<Bill | null>(null);
   const [billToDelete, setBillToDelete] = useState<string | null>(null);
 
-  const handleDelete = () => {
-    if (billToDelete) {
-      deleteSale(billToDelete);
-      toast({
-        title: "Sale Deleted",
-        description: "The sale has been removed from history.",
-      });
-      setBillToDelete(null);
+  const handleDelete = async () => {
+    if (billToDelete && shopId) {
+      try {
+        // Note: Deleting subcollections is not handled here. For a production app,
+        // you would need a Cloud Function to recursively delete subcollections.
+        await deleteDoc(doc(firestore, 'shops', shopId, 'bills', billToDelete));
+        toast({
+          title: "Sale Deleted",
+          description: "The sale has been removed from history.",
+        });
+      } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Delete failed",
+            description: error.message
+        })
+      } finally {
+        setBillToDelete(null);
+      }
     }
   };
 
@@ -56,25 +98,28 @@ export default function PastBills() {
       <div>
         <h2 className="font-headline text-xl font-semibold mb-4">Sales History</h2>
         <Accordion type="single" collapsible className="w-full">
-          {sales.map((sale) => (
+          {sales.map(sale => (
             <AccordionItem value={sale.id} key={sale.id}>
               <AccordionTrigger>
-                <div className="flex justify-between w-full pr-4">
-                  <span className="font-mono text-sm">{sale.id}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {new Date(sale.date).toLocaleString()}
+                <div className="flex justify-between w-full pr-4 text-sm">
+                  <span className="font-mono">{sale.invoiceNumber}</span>
+                  <span className="text-muted-foreground">
+                    {new Date(sale.billDate).toLocaleString()}
                   </span>
-                  <span className="font-semibold">₹{sale.total.toLocaleString()}</span>
+                  <span className="font-semibold">₹{sale.totalAmount.toLocaleString()}</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="flex justify-end items-center gap-2 p-4 bg-muted/50 rounded-md">
-                  <Button variant="outline" size="sm" onClick={() => setBillToView(sale)}>
-                    <Printer className="mr-2 h-4 w-4" /> View / Print / Download
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => setBillToDelete(sale.id)}>
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete
-                  </Button>
+                <div className='bg-muted/30 p-4 rounded-md'>
+                    <BillItems shopId={shopId!} billId={sale.id} />
+                    <div className="flex justify-end items-center gap-2 pt-4 mt-4 border-t border-border">
+                    {/* <Button variant="outline" size="sm" onClick={() => setBillToView(sale)}>
+                        <Printer className="mr-2 h-4 w-4" /> View / Print / Download
+                    </Button> */}
+                    <Button variant="destructive" size="sm" onClick={() => setBillToDelete(sale.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    </Button>
+                    </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -82,25 +127,27 @@ export default function PastBills() {
         </Accordion>
       </div>
 
-      {billToView && (
+      {/* {billToView && (
         <BillGeneratedDialog
           billData={billToView}
           onClose={() => setBillToView(null)}
           title="View Bill"
         />
-      )}
+      )} */}
 
-      <AlertDialog open={!!billToDelete} onOpenChange={(open) => !open && setBillToDelete(null)}>
+      <AlertDialog open={!!billToDelete} onOpenChange={open => !open && setBillToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this sale record?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the sale record from history.
+              This action cannot be undone. This will permanently delete the sale record from your history. Sub-items will not be deleted automatically.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setBillToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
