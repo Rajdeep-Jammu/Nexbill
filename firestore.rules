@@ -1,0 +1,184 @@
+/**
+ * Core Philosophy:
+ * This ruleset implements a multi-tenant security model centered around Shops.
+ * Each Shop is an isolated data silo controlled by a single owner (`shopOwnerId`).
+ * The primary security mechanism is strict data ownership, ensuring shop owners can only
+ * access and manage their own data (products, customers, bills).
+ * A secondary, read-only access pattern is provided for authenticated customers,
+ * allowing them to view their personal purchase history.
+ *
+ * Data Structure:
+ * All application data is hierarchically organized under the `/shops/{shopId}` collection.
+ * This top-level collection contains documents for each business, and all related data
+ * (products, customers, bills, etc.) is stored in subcollections within that shop's document.
+ * This structure naturally partitions data by tenant.
+ *
+ * Key Security Decisions:
+ * - Default Deny: All operations are denied by default. Access is granted explicitly.
+ * - No Global Listing: Listing all shops in the root collection is disallowed to protect tenant privacy.
+ * - Owner-Centric Writes: All write operations (create, update, delete) on shop-related data
+ *   are restricted to the designated shop owner.
+ * - Customer Read-Only Access: Authenticated customers are granted read-only (`get`) access
+ *   to their own bills and bill items, but they cannot list all bills in a shop.
+ *
+ * Denormalization for Authorization:
+ * To ensure performant and simple security rules, this model relies heavily on denormalization.
+ * - `shopOwnerId`: The UID of the shop owner is denormalized and stored on every single document
+ *   within a shop's data tree. This allows for direct ownership checks without costly `get()` calls
+ *   to parent documents.
+ * - `customerAuthUid`: If a customer is authenticated, their UID is denormalized onto their
+ *   associated `Bill` and `BillItem` documents. This enables a simple and fast rule to grant them
+ *   read access to their purchase history.
+ *
+ * Structural Segregation:
+ * Each data type (Products, Customers, Bills) is stored in its own dedicated subcollection
+ * under a shop. This clear separation simplifies rule logic, as a single set of permissions can
+ * be applied uniformly to all documents within a given collection.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --------------------------------
+    // Helper Functions
+    // --------------------------------
+
+    /**
+     * Returns true if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the current request's authenticated user UID
+     * matches the provided `uid`.
+     */
+    function isAuthOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    /**
+     * Returns true if the document being accessed exists.
+     * Used to protect against writes on non-existent documents.
+     */
+    function documentExists() {
+      return resource != null;
+    }
+
+    /**
+     * Checks if the authenticated user is the owner of the specified shop.
+     * This requires a 'get' call to the parent shop document and should be used
+     * to authorize collection-level 'list' operations.
+     */
+    function isShopOwner(shopId) {
+      return isSignedIn() && get(/databases/$(database)/documents/shops/$(shopId)).data.shopOwnerId == request.auth.uid;
+    }
+
+    /**
+     * Checks if the user is the owner based on the 'shopOwnerId' field
+     * denormalized onto the document itself. This is the primary check
+     * for document-level reads and writes.
+     */
+    function isDocumentOwner(docData) {
+      return isAuthOwner(docData.shopOwnerId);
+    }
+    
+    /**
+     * Checks if the user is the customer associated with a bill or bill item,
+     * based on the denormalized 'customerAuthUid' field.
+     */
+    function isDocumentCustomer(docData) {
+      return isAuthOwner(docData.customerAuthUid);
+    }
+
+    // --------------------------------
+    // Collection Rules
+    // --------------------------------
+
+    /**
+     * @description Controls access to a Shop document, the root for all tenant data.
+     * @path /shops/{shopId}
+     * @allow (get) The owner of the shop can read their shop's details.
+     * @allow (create) An authenticated user can create a new shop document for themselves.
+     * @deny (list) No user, authenticated or not, can list all shops in the database.
+     * @deny (update) A user cannot update a shop they do not own.
+     * @principle Enforces strict document ownership and prevents cross-tenant data visibility.
+     */
+    match /shops/{shopId} {
+      allow get: if isDocumentOwner(resource.data);
+      allow list: if false;
+      allow create: if isSignedIn() && isAuthOwner(request.resource.data.shopOwnerId) && request.resource.data.id == shopId;
+      allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.shopOwnerId == resource.data.shopOwnerId;
+      allow delete: if documentExists() && isDocumentOwner(resource.data);
+    }
+
+    /**
+     * @description Manages products within a specific shop.
+     * @path /shops/{shopId}/products/{productId}
+     * @allow (create) The shop owner can add new products to their shop.
+     * @allow (list) The shop owner can list all products in their own shop.
+     * @deny (get) A user cannot read product details from a shop they do not own.
+     * @deny (delete) A user cannot delete products from another user's shop.
+     * @principle Restricts all data access within a subcollection to the parent document's owner.
+     */
+    match /shops/{shopId}/products/{productId} {
+      allow get: if isDocumentOwner(resource.data);
+      allow list: if isShopOwner(shopId);
+      allow create: if isShopOwner(shopId) && request.resource.data.shopId == shopId;
+      allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.shopId == resource.data.shopId;
+      allow delete: if documentExists() && isDocumentOwner(resource.data);
+    }
+
+    /**
+     * @description Manages customer records associated with a specific shop.
+     * @path /shops/{shopId}/customers/{customerId}
+     * @allow (create) The shop owner can add new customer records.
+     * @allow (list) The shop owner can list all their customers.
+     * @deny (update) A customer cannot modify their own record; only the shop owner can.
+     * @deny (get) A user cannot view customer data from a shop they do not own.
+     * @principle Restricts all data access within a subcollection to the parent document's owner.
+     */
+    match /shops/{shopId}/customers/{customerId} {
+      allow get: if isDocumentOwner(resource.data);
+      allow list: if isShopOwner(shopId);
+      allow create: if isShopOwner(shopId) && request.resource.data.shopId == shopId;
+      allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.shopId == resource.data.shopId;
+      allow delete: if documentExists() && isDocumentOwner(resource.data);
+    }
+
+    /**
+     * @description Controls access to bills (invoices), allowing access for both shop owners and the relevant customer.
+     * @path /shops/{shopId}/bills/{billId}
+     * @allow (get) The shop owner OR the authenticated customer associated with the bill can read it.
+     * @allow (list) ONLY the shop owner can list all bills for their shop. Customers cannot.
+     * @allow (create) The shop owner can create new bills.
+     * @deny (get) An unassociated customer cannot read another customer's bill.
+     * @deny (update) A customer cannot modify their own bill.
+     * @principle Implements a hybrid access model: full ownership for the shop owner and read-only access for a specific collaborator (the customer).
+     */
+    match /shops/{shopId}/bills/{billId} {
+      allow get: if isDocumentOwner(resource.data) || isDocumentCustomer(resource.data);
+      allow list: if isShopOwner(shopId);
+      allow create: if isShopOwner(shopId) && request.resource.data.shopId == shopId;
+      allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.shopId == resource.data.shopId;
+      allow delete: if documentExists() && isDocumentOwner(resource.data);
+
+      /**
+       * @description Controls access to the line items of a bill.
+       * @path /shops/{shopId}/bills/{billId}/billItems/{billItemId}
+       * @allow (get) The shop owner OR the associated customer can view the bill's line items.
+       * @allow (list) The shop owner can list all items for a specific bill.
+       * @deny (create) A customer cannot add items to their own bill.
+       * @principle Inherits the hybrid access model from the parent bill, secured by denormalized IDs.
+       */
+      match /billItems/{billItemId} {
+        allow get: if isDocumentOwner(resource.data) || isDocumentCustomer(resource.data);
+        allow list: if isShopOwner(shopId);
+        allow create: if isShopOwner(shopId) && request.resource.data.billId == billId;
+        allow update: if documentExists() && isDocumentOwner(resource.data) && request.resource.data.billId == resource.data.billId;
+        allow delete: if documentExists() && isDocumentOwner(resource.data);
+      }
+    }
+  }
+}
