@@ -1,7 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
-import { useEffect, useRef } from "react";
+import { useFormStatus } from "react-dom";
+import { useEffect, useRef, useActionState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Wand2, Loader2 } from "lucide-react";
@@ -56,8 +56,8 @@ function GenerateButton() {
 
 export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void }) {
   const { toast } = useToast();
-  const [formState, formAction] = useFormState(addProduct, initialState);
-  const [genState, genAction] = useFormState(generateDescriptionAction, initialState);
+  const [formState, formAction] = useActionState(addProduct, initialState);
+  const [genState, genAction] = useActionState(generateDescriptionAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   
   const form = useForm<Product>({
