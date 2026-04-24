@@ -15,9 +15,10 @@ interface BillGeneratedDialogProps {
         total: number;
     };
     onClose: () => void;
+    title?: string;
 }
 
-export default function BillGeneratedDialog({ billData, onClose }: BillGeneratedDialogProps) {
+export default function BillGeneratedDialog({ billData, onClose, title }: BillGeneratedDialogProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isPrinting, setIsPrinting] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -110,13 +111,13 @@ export default function BillGeneratedDialog({ billData, onClose }: BillGenerated
         <Dialog open={isOpen} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
-                    <DialogTitle className="font-headline text-2xl">Bill Generated</DialogTitle>
+                    <DialogTitle className="font-headline text-2xl">{title || 'Bill Generated'}</DialogTitle>
                 </DialogHeader>
                 <div className="my-4 border rounded-lg overflow-hidden max-h-[50vh] overflow-y-auto">
                     <PrintableBill ref={printableRef} items={billData.items} total={billData.total} />
                 </div>
                 <DialogFooter className="flex-col sm:flex-row sm:justify-between gap-2">
-                    <Button variant="outline" onClick={handleClose}>Close & New Bill</Button>
+                    <Button variant="outline" onClick={handleClose}>{title ? "Close" : "Close & New Bill"}</Button>
                     <div className="flex items-center gap-2 justify-end">
                         <Button onClick={handlePrint} disabled={isPrinting || isDownloading}>
                             {isPrinting ? <Loader2 className="animate-spin" /> : <Printer />}

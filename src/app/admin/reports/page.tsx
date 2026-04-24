@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card } from "@/components/ui/card";
 import { DollarSign, Package, ShoppingCart } from "lucide-react";
 import { useMemo } from "react";
+import PastBills from "@/components/billing/PastBills";
+import { Separator } from "@/components/ui/separator";
 
 export default function ReportsPage() {
     const sales = useSalesStore((state) => state.sales);
@@ -79,7 +81,7 @@ export default function ReportsPage() {
                 <CategorySalesChart sales={sales} />
             </div>
 
-            <div>
+            <div className="mb-8">
                 <h2 className="font-headline text-xl sm:text-2xl font-semibold text-foreground mb-4">
                     Product Sales Breakdown
                 </h2>
@@ -106,6 +108,11 @@ export default function ReportsPage() {
                     </div>
                 </Card>
             </div>
+            
+            <Separator className="my-8" />
+            
+            <PastBills />
+
         </div>
     );
 }

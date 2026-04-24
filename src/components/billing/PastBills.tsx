@@ -33,8 +33,8 @@ export default function PastBills() {
     if (billToDelete) {
       deleteSale(billToDelete);
       toast({
-        title: "Bill Deleted",
-        description: "The selected bill has been removed.",
+        title: "Sale Deleted",
+        description: "The sale has been removed from history.",
       });
       setBillToDelete(null);
     }
@@ -43,9 +43,9 @@ export default function PastBills() {
   if (sales.length === 0) {
     return (
       <div>
-        <h2 className="font-headline text-xl font-semibold mb-4">Past Bills</h2>
+        <h2 className="font-headline text-xl font-semibold mb-4">Sales History</h2>
         <div className="flex h-24 items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/50">
-          <p className="text-muted-foreground">No past bills found.</p>
+          <p className="text-muted-foreground">No sales have been recorded yet.</p>
         </div>
       </div>
     );
@@ -54,7 +54,7 @@ export default function PastBills() {
   return (
     <>
       <div>
-        <h2 className="font-headline text-xl font-semibold mb-4">Past Bills</h2>
+        <h2 className="font-headline text-xl font-semibold mb-4">Sales History</h2>
         <Accordion type="single" collapsible className="w-full">
           {sales.map((sale) => (
             <AccordionItem value={sale.id} key={sale.id}>
@@ -70,7 +70,7 @@ export default function PastBills() {
               <AccordionContent>
                 <div className="flex justify-end items-center gap-2 p-4 bg-muted/50 rounded-md">
                   <Button variant="outline" size="sm" onClick={() => setBillToView(sale)}>
-                    <Printer className="mr-2 h-4 w-4" /> Print / View / Download
+                    <Printer className="mr-2 h-4 w-4" /> View / Print / Download
                   </Button>
                   <Button variant="destructive" size="sm" onClick={() => setBillToDelete(sale.id)}>
                     <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -86,15 +86,16 @@ export default function PastBills() {
         <BillGeneratedDialog
           billData={billToView}
           onClose={() => setBillToView(null)}
+          title="View Bill"
         />
       )}
 
       <AlertDialog open={!!billToDelete} onOpenChange={(open) => !open && setBillToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this bill?</AlertDialogTitle>
+            <AlertDialogTitle>Delete this sale record?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the bill record.
+              This action cannot be undone. This will permanently delete the sale record from history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
