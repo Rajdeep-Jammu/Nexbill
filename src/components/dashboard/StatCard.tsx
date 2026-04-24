@@ -18,13 +18,13 @@ export default function StatCard({
 }: StatCardProps) {
   return (
     <Card className="rounded-xl border-border bg-card/50 shadow-md">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-        <CardTitle className="text-xs font-medium text-muted-foreground">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-2">
+        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
         {icon}
       </CardHeader>
-      <CardContent className="p-4 pt-0">
+      <CardContent className="p-3 sm:p-4 pt-0">
         <div className="text-2xl sm:text-3xl font-bold text-foreground">{value}</div>
         {change && (
           <p
@@ -33,7 +33,7 @@ export default function StatCard({
               isWarning ? "text-destructive" : "text-muted-foreground"
             )}
           >
-            {change} from last week
+            {change}
           </p>
         )}
       </CardContent>

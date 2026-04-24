@@ -6,9 +6,9 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
+  ResponsiveContainer,
 } from "recharts";
 import {
-  ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
@@ -33,7 +33,7 @@ const chartConfig = {
 
 export default function SalesChart() {
   return (
-    <ChartContainer config={chartConfig} className="h-full w-full">
+    <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} accessibilityLayer>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
         <XAxis
@@ -61,6 +61,6 @@ export default function SalesChart() {
         />
         <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} />
       </BarChart>
-    </ChartContainer>
+    </ResponsiveContainer>
   );
 }

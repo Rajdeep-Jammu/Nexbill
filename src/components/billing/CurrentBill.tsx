@@ -1,6 +1,7 @@
 "use client";
 
 import { useBillingStore } from "@/hooks/use-billing-store";
+import { useSalesStore } from "@/hooks/use-sales-store";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,6 +13,7 @@ import type { CartItem } from "@/lib/types";
 
 export default function CurrentBill() {
   const { items, updateQuantity, removeFromCart, totalAmount, clearCart } = useBillingStore();
+  const addSale = useSalesStore((state) => state.addSale);
   const [billData, setBillData] = useState<{ items: CartItem[], total: number} | null>(null);
 
   const handleCheckout = () => {
@@ -22,6 +24,9 @@ export default function CurrentBill() {
   };
   
   const onDialogClose = () => {
+    if (billData) {
+      addSale(billData);
+    }
     setBillData(null);
     clearCart();
   }
@@ -35,7 +40,7 @@ export default function CurrentBill() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[40vh]">
+        <ScrollArea className="h-[40vh] sm:h-[calc(80vh-220px)]">
           {items.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <p className="text-muted-foreground">No items in bill yet.</p>

@@ -2,6 +2,7 @@ import { DollarSign, Package, ShoppingCart, TrendingUp } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/dashboard/StatCard";
 import SalesChart from "@/components/dashboard/SalesChart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function DashboardPage() {
   // Mock data for demonstration
@@ -9,13 +10,13 @@ export default function DashboardPage() {
     {
       title: "Today's Sales",
       value: "₹12,545",
-      change: "+15%",
+      change: "+15% from last week",
       icon: <DollarSign className="h-5 w-5 text-primary" />,
     },
     {
       title: "Total Products",
       value: "842",
-      change: "+5 new",
+      change: "+5 new from last week",
       icon: <Package className="h-5 w-5 text-primary" />,
     },
     {
@@ -50,12 +51,18 @@ export default function DashboardPage() {
       </div>
 
       <div className="mt-6 sm:mt-8">
-        <h2 className="font-headline text-xl sm:text-2xl font-semibold text-foreground mb-4">
-          Weekly Sales
-        </h2>
-        <div className="h-64 sm:h-80 rounded-2xl border border-border bg-card/50 p-2 sm:p-4">
-          <SalesChart />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-headline text-xl sm:text-2xl">
+              Weekly Sales
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 sm:h-80">
+              <SalesChart />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
