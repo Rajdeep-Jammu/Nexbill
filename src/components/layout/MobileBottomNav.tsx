@@ -29,7 +29,7 @@ export default function MobileBottomNav() {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 200, damping: 20 }}
-      className="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-card/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50"
+      className="fixed bottom-4 left-4 right-4 h-16 bg-card/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50"
     >
       <nav className="flex h-full items-center justify-around">
         {navItems.map((item) => (

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/hooks/use-auth-store";
-import DesktopSidebar from "@/components/layout/DesktopSidebar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { Loader2 } from "lucide-react";
 
@@ -36,13 +35,12 @@ export default function MainAppLayout({
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <DesktopSidebar />
-      <main className="flex-1 p-4 sm:p-6 md:ml-64">
+      <main className="flex-1 p-4 sm:p-6">
         {children}
       </main>
       <MobileBottomNav />
       {/* Add padding to bottom of main content to avoid overlap with mobile nav */}
-      <div className="h-24 md:hidden"></div>
+      <div className="h-24"></div>
     </div>
   );
 }
