@@ -24,8 +24,8 @@ const initialState = {
   isLoggedIn: false,
   initialized: false,
   biometricEnabled: false,
-  upiId: null,
-  qrCodeUrl: null,
+  upiId: "your-shop@upi",
+  qrCodeUrl: "https://placehold.co/200x200/FFFFFF/000000?text=Scan+to+Pay",
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -42,7 +42,7 @@ export const useAuthStore = create<AuthState>()(
       },
       login: () => set({ isLoggedIn: true }),
       logout: () => set({ isLoggedIn: false }),
-      reset: () => set({ ...initialState, initialized: true }),
+      reset: () => set({ ...initialState, shopName: null, pin: null, isLoggedIn: false, initialized: true }),
       toggleBiometric: () => set(state => ({ biometricEnabled: !state.biometricEnabled })),
       changePin: (oldPin: string, newPin: string) => {
         if (get().pin === oldPin) {
@@ -65,10 +65,10 @@ export const useAuthStore = create<AuthState>()(
             state.biometricEnabled = false;
         }
         if (typeof state.upiId === 'undefined') {
-            state.upiId = null;
+            state.upiId = initialState.upiId;
         }
         if (typeof state.qrCodeUrl === 'undefined') {
-            state.qrCodeUrl = null;
+            state.qrCodeUrl = initialState.qrCodeUrl;
         }
         return { ...currentState, ...state };
       }
