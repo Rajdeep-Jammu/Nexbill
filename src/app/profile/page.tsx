@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Loader2, LogOut } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -67,7 +68,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <CustomerLayout>
-        <PageHeader title="Profile" />
+        <PageHeader title="My Profile" />
         <div className="flex items-center justify-center">
           <Card className="w-full max-w-md text-center p-8 bg-card/50 backdrop-blur-lg border-white/10">
             <CardHeader>
