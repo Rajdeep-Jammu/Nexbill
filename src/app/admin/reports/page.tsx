@@ -1,21 +1,68 @@
 'use client';
 
 import PageHeader from "@/components/PageHeader";
-import { Terminal } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useAuthStore } from "@/hooks/use-auth-store";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
+import type { Bill } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import SalesChart from "@/components/dashboard/SalesChart";
+import PastBills from "@/components/billing/PastBills";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ReportsPage() {
+    const shopId = useAuthStore((state) => state.shopId);
+    const firestore = useFirestore();
+    const { user } = useUser();
+
+    const billsQuery = useMemoFirebase(() => {
+        if (!shopId || !user) return null;
+        // This is the crucial fix: adding the where clause to satisfy security rules
+        return query(collection(firestore, 'shops', shopId, 'bills'), where('shopOwnerId', '==', user.uid));
+    }, [firestore, shopId, user]);
+
+    const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
+
+    if (isLoading) {
+        return (
+            <div>
+                <PageHeader title="Reports" />
+                <div className="grid gap-8">
+                    <Card>
+                        <CardHeader>
+                            <Skeleton className="h-8 w-48" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-80 w-full" />
+                        </CardContent>
+                    </Card>
+                    <div>
+                        <Skeleton className="h-8 w-36 mb-4" />
+                        <Skeleton className="h-48 w-full" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div>
             <PageHeader title="Reports" />
-            <div className="flex h-[60vh] items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/50">
-                <Alert variant="destructive" className="max-w-md">
-                    <Terminal className="h-4 w-4" />
-                    <AlertTitle>Feature Temporarily Disabled</AlertTitle>
-                    <AlertDescription>
-                        The reports feature is currently unavailable due to a recurring permission error. It has been temporarily disabled to prevent the application from crashing.
-                    </AlertDescription>
-                </Alert>
+            <div className="space-y-8">
+                <Card className="bg-card/50 backdrop-blur-lg border-white/10">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-xl sm:text-2xl">
+                        Weekly Sales
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-64 sm:h-80">
+                        <SalesChart bills={bills || []} />
+                        </div>
+                    </CardContent>
+                </Card>
+                
+                <PastBills sales={bills || []} />
             </div>
         </div>
     );
