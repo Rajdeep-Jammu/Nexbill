@@ -13,16 +13,13 @@ export const productSchema = z.object({
   description: z.string().optional(),
   image: z.any()
     .refine(
-        (file) => file, "Image is required."
-    )
-    .refine(
         (file) => !(file instanceof File) || file.size <= MAX_FILE_SIZE, 
         `Max file size is 5MB.`
     )
     .refine(
         (file) => !(file instanceof File) || ACCEPTED_IMAGE_TYPES.includes(file.type),
         ".jpg, .jpeg, .png and .webp files are accepted."
-    ),
+    ).optional(),
   imageHint: z.string().optional(),
 });
 

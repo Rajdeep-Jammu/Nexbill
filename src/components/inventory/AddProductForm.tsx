@@ -92,7 +92,7 @@ export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void })
     }
 
     try {
-        let imageUrl = '';
+        let imageUrl = 'https://placehold.co/400x400/27272a/a1a1aa?text=No+Image';
         let imageHint = values.imageHint || values.category;
 
         // Check if a new image file was provided
