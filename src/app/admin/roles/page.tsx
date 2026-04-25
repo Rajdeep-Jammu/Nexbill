@@ -89,9 +89,9 @@ export default function RolesPage() {
             <CardContent>
               {isLoading ? (
                  <div className="space-y-3">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
+                    {[...Array(3)].map((_, i) => (
+                      <Skeleton key={i} className="h-10 w-full" />
+                    ))}
                  </div>
               ) : (
                 <ul className="space-y-2">
