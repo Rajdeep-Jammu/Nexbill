@@ -21,6 +21,7 @@ export type CartItem = Product & {
 export type Bill = {
     id: string;
     shopId: string;
+    shopOwnerId: string;
     customerId?: string;
     customerAuthUid?: string;
     invoiceNumber: string;

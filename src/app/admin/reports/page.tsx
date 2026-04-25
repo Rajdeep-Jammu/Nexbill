@@ -8,19 +8,20 @@ import { useMemo } from "react";
 import PastBills from "@/components/billing/PastBills";
 import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/hooks/use-auth-store";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query } from "firebase/firestore";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
 import type { Product } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ReportsPage() {
     const shopId = useAuthStore(state => state.shopId);
     const firestore = useFirestore();
+    const { user } = useUser();
 
     const billsQuery = useMemoFirebase(() => {
-        if (!shopId) return null;
-        return query(collection(firestore, 'shops', shopId, 'bills'));
-    }, [firestore, shopId]);
+        if (!shopId || !user) return null;
+        return query(collection(firestore, 'shops', shopId, 'bills'), where('shopOwnerId', '==', user.uid));
+    }, [firestore, shopId, user]);
 
     const { data: sales, isLoading: billsLoading } = useCollection<any>(billsQuery);
 
@@ -38,7 +39,6 @@ export default function ReportsPage() {
         // Note: totalItemsSold and uniqueProductsSold would require fetching all billItems,
         // which can be inefficient. For this app, we'll make some assumptions or simplify.
         // Let's assume bills have item counts, or we fetch them.
-        // For now, let's keep it simple and maybe come back to it.
         const totalItemsSold = sales.reduce((sum, sale) => sum + (sale.itemCount || 0), 0);
         
         // This is complex without all bill items. For now, we'll placeholder this.

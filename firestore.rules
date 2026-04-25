@@ -194,7 +194,8 @@ service cloud.firestore {
      */
     match /shops/{shopId}/bills/{billId} {
       allow get: if isShopOwner(shopId) || isDocumentCustomer(resource.data);
-      allow list: if isShopOwner(shopId) || (isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'customerAuthUid' && request.query.where[0][2] == request.auth.uid);
+      allow list: if (isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'shopOwnerId' && request.query.where[0][2] == request.auth.uid) 
+          || (isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'customerAuthUid' && request.query.where[0][2] == request.auth.uid);
       allow create: if isShopOwner(shopId);
       allow update: if documentExists() && isShopOwner(shopId);
       allow delete: if documentExists() && isShopOwner(shopId);

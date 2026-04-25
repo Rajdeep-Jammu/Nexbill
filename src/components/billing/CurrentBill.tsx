@@ -49,6 +49,7 @@ export default function CurrentBill() {
       const bill: Bill = {
         id: billRef.id,
         shopId,
+        shopOwnerId: shopOwnerId,
         invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
         billDate: new Date().toISOString(),
         subtotal: billData.total, // Assuming total is subtotal for now
