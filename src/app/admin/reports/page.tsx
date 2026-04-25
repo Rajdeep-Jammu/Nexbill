@@ -25,14 +25,6 @@ export default function ReportsPage() {
 
     const { data: sales, isLoading: billsLoading } = useCollection<any>(billsQuery);
 
-    const billItemsQuery = useMemoFirebase(() => {
-        if (!shopId) return null;
-        // This is not efficient for large scale, but for this app it's okay.
-        // It fetches all billItems for all bills.
-        return query(collection(firestore, 'shops', shopId, 'bills'));
-    }, [firestore, shopId]);
-
-
     const { totalRevenue, totalItemsSold, uniqueProductsSold } = useMemo(() => {
         if (!sales) return { totalRevenue: 0, totalItemsSold: 0, uniqueProductsSold: 0 };
         const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
