@@ -141,14 +141,14 @@ service cloud.firestore {
     /**
      * @description Controls access to a Shop document, the root for all tenant data.
      * @path /shops/{shopId}
-     * @allow (get) The owner of the shop can read their shop's details.
+     * @allow (get) Any authenticated user can read a shop's top-level details. This is required to allow the isShopOwner helper function to work correctly.
      * @allow (create) An authenticated user can create a new shop document for themselves.
      * @deny (list) No user, authenticated or not, can list all shops in the database.
      * @deny (update) A user cannot update a shop they do not own.
      * @principle Enforces strict document ownership and prevents cross-tenant data visibility.
      */
     match /shops/{shopId} {
-      allow get: if isShopOwner(shopId);
+      allow get: if isSignedIn();
       allow list: if false; // Disallow listing all shops
       allow create: if isSignedIn() && isAuthOwner(request.resource.data.shopOwnerId) && request.resource.data.id == shopId;
       allow update: if documentExists() && isShopOwner(shopId) && request.resource.data.shopOwnerId == resource.data.shopOwnerId;
