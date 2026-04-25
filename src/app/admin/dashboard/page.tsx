@@ -1,6 +1,6 @@
 'use client';
 
-import { DollarSign, Package, ShoppingCart, TrendingUp, Eye, User } from "lucide-react";
+import { DollarSign, Package, ShoppingCart, TrendingUp, Eye } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/dashboard/StatCard";
 import SalesChart from "@/components/dashboard/SalesChart";
@@ -8,22 +8,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAuthStore } from "@/hooks/use-auth-store";
-import { useFirestore, useCollection } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { useMemo } from "react";
-import { collection, query, where } from "firebase/firestore";
+import { collection, query } from "firebase/firestore";
 import type { Product } from "@/lib/types";
 
 export default function DashboardPage() {
   const shopId = useAuthStore((state) => state.shopId);
   const firestore = useFirestore();
 
-  const productsQuery = useMemo(() => {
+  const productsQuery = useMemoFirebase(() => {
     if (!shopId) return null;
     return query(collection(firestore, 'shops', shopId, 'products'));
   }, [firestore, shopId]);
   const { data: products } = useCollection<Product>(productsQuery);
 
-  const billsQuery = useMemo(() => {
+  const billsQuery = useMemoFirebase(() => {
     if (!shopId) return null;
     return query(collection(firestore, 'shops', shopId, 'bills'));
   }, [firestore, shopId]);

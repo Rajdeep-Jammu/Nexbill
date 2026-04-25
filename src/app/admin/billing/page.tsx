@@ -5,9 +5,8 @@ import ProductSelector from '@/components/billing/ProductSelector';
 import CurrentBill from '@/components/billing/CurrentBill';
 import SessionLoader from '@/components/billing/SessionLoader';
 import { useAuthStore } from '@/hooks/use-auth-store';
-import { useMemo } from 'react';
-import { collection, query, where } from 'firebase/firestore';
-import { useFirestore, useCollection } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -15,7 +14,7 @@ export default function BillingPage() {
   const firestore = useFirestore();
   const shopId = useAuthStore(state => state.shopId);
 
-  const productsQuery = useMemo(() => {
+  const productsQuery = useMemoFirebase(() => {
     if (!shopId) return null;
     return query(collection(firestore, 'shops', shopId, 'products'));
   }, [firestore, shopId]);
