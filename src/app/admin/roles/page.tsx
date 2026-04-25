@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -96,7 +97,7 @@ export default function RolesPage() {
               ) : (
                 <ul className="space-y-2">
                   {admins?.map(admin => (
-                    <li key={admin.uid} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                    <li key={admin.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                       <div>
                         <p className="font-semibold">{admin.email || 'No Email Provided'}</p>
                         <p className="font-mono text-xs text-muted-foreground">{admin.uid}</p>
