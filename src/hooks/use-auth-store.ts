@@ -5,7 +5,6 @@ interface AuthState {
   shopName: string | null;
   pin: string | null;
   isLoggedIn: boolean;
-  initialized: boolean;
   biometricEnabled: boolean;
   upiId: string | null;
   qrCodeUrl: string | null;
@@ -24,7 +23,6 @@ const initialState = {
   shopName: null,
   pin: null,
   isLoggedIn: false,
-  initialized: false,
   biometricEnabled: false,
   upiId: 'your-shop@upi',
   qrCodeUrl: 'https://placehold.co/200x200/FFFFFF/000000?text=Scan+to+Pay',
@@ -43,14 +41,13 @@ export const useAuthStore = create<AuthState>()(
           pin,
           shopId,
           shopOwnerId,
-          initialized: true,
         });
       },
       login: () => set({ isLoggedIn: true }),
       logout: () => set({ isLoggedIn: false }),
       reset: () => {
         // Also clear firebase auth? For now, just clears local state.
-        set({ ...initialState, initialized: true });
+        set(initialState);
       },
       toggleBiometric: () => set(state => ({ biometricEnabled: !state.biometricEnabled })),
       changePin: (oldPin: string, newPin: string) => {
@@ -65,9 +62,6 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
-      onRehydrate: () => {
-        useAuthStore.setState({ initialized: true });
-      },
       merge: (persistedState, currentState) => {
         const state = persistedState as any;
         if (typeof state.biometricEnabled === 'undefined') {
@@ -84,8 +78,3 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
-
-// This ensures that the store is initialized on the client side
-if (typeof window !== 'undefined') {
-  useAuthStore.getState();
-}

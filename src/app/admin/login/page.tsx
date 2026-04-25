@@ -16,15 +16,20 @@ export default function LoginPage() {
   const [pin, setPin] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
-  const { shopName, pin: storedPin, login, biometricEnabled, initialized } = useAuthStore();
+  const { shopName, pin: storedPin, login, biometricEnabled } = useAuthStore();
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     // Wait until the store is rehydrated from localStorage before checking credentials
-    if (initialized && (!shopName || !storedPin)) {
+    if (isClient && (!shopName || !storedPin)) {
       router.replace("/admin/setup");
     }
-  }, [initialized, shopName, storedPin, router]);
+  }, [isClient, shopName, storedPin, router]);
 
   const handleLogin = () => {
     setIsLoggingIn(true);
@@ -54,8 +59,8 @@ export default function LoginPage() {
     }
   }
 
-  // Show a loader while the auth store is initializing to prevent race conditions
-  if (!initialized) {
+  // Show a loader while the component is mounting and store is hydrating
+  if (!isClient) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

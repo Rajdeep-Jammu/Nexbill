@@ -14,7 +14,7 @@ export default function AdminAppLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn, initialized, shopId } = useAuthStore();
+  const { isLoggedIn, shopId } = useAuthStore();
   const { isUserLoading } = useUser();
   const [isClient, setIsClient] = useState(false);
 
@@ -23,12 +23,12 @@ export default function AdminAppLayout({
   }, []);
 
   useEffect(() => {
-    if (!isClient || !initialized || isUserLoading) return;
+    if (!isClient || isUserLoading) return;
 
     const isSetupPage = pathname.includes('/admin/setup');
     const isLoginPage = pathname.includes('/admin/login');
 
-    // If store is initialized but no shop is configured, force setup.
+    // If store is hydrated but no shop is configured, force setup.
     if (!shopId && !isSetupPage) {
       router.replace('/admin/setup');
       return;
@@ -41,13 +41,13 @@ export default function AdminAppLayout({
       return;
     }
 
-  }, [isClient, initialized, isLoggedIn, router, shopId, isUserLoading, pathname]);
+  }, [isClient, isLoggedIn, router, shopId, isUserLoading, pathname]);
 
   const isAuthPage = pathname.includes('/admin/setup') || pathname.includes('/admin/login');
 
   // While initializing, or if redirection is needed for a non-auth page, show a loader.
   if (
-    (!isClient || !initialized || isUserLoading) ||
+    (!isClient || isUserLoading) ||
     (!isAuthPage && (!shopId || !isLoggedIn))
   ) {
     return (
