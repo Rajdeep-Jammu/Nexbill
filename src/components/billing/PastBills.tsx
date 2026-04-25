@@ -8,7 +8,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Printer, Trash2, Loader2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import BillGeneratedDialog from './BillGeneratedDialog';
 import { useToast } from '@/hooks/use-toast';
 import type { Bill, BillItem } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -57,7 +56,6 @@ export default function PastBills({ sales }: PastBillsProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { shopId } = useAuthStore();
-  const [billToView, setBillToView] = useState<Bill | null>(null);
   const [billToDelete, setBillToDelete] = useState<string | null>(null);
 
   const handleDelete = async () => {
@@ -113,9 +111,6 @@ export default function PastBills({ sales }: PastBillsProps) {
                 <div className='bg-muted/30 p-4 rounded-md'>
                     <BillItems shopId={shopId!} billId={sale.id} />
                     <div className="flex justify-end items-center gap-2 pt-4 mt-4 border-t border-border">
-                    {/* <Button variant="outline" size="sm" onClick={() => setBillToView(sale)}>
-                        <Printer className="mr-2 h-4 w-4" /> View / Print / Download
-                    </Button> */}
                     <Button variant="destructive" size="sm" onClick={() => setBillToDelete(sale.id)}>
                         <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </Button>
@@ -126,14 +121,6 @@ export default function PastBills({ sales }: PastBillsProps) {
           ))}
         </Accordion>
       </div>
-
-      {/* {billToView && (
-        <BillGeneratedDialog
-          billData={billToView}
-          onClose={() => setBillToView(null)}
-          title="View Bill"
-        />
-      )} */}
 
       <AlertDialog open={!!billToDelete} onOpenChange={open => !open && setBillToDelete(null)}>
         <AlertDialogContent>
