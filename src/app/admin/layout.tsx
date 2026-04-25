@@ -14,8 +14,8 @@ export default function AdminAppLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn, initialized, shopId, shopOwnerId } = useAuthStore();
-  const { user: firebaseUser, isUserLoading } = useUser();
+  const { isLoggedIn, initialized, shopId } = useAuthStore();
+  const { isUserLoading } = useUser();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -25,31 +25,31 @@ export default function AdminAppLayout({
   useEffect(() => {
     if (!isClient || !initialized || isUserLoading) return;
 
-    const isSetupPage = pathname.includes('/setup');
+    const isSetupPage = pathname.includes('/admin/setup');
+    const isLoginPage = pathname.includes('/admin/login');
 
     // If store is initialized but no shop is configured, force setup.
     if (!shopId && !isSetupPage) {
       router.replace('/admin/setup');
       return;
     }
-
-    // If shop is configured, but user is not logged into Firebase, it's an inconsistent state.
-    // This can happen if local storage is manipulated or cleared. Resetting is safest.
-    if (shopId && shopOwnerId && !firebaseUser) {
-       // Silently re-auth is handled by Firebase provider. If it fails, maybe reset.
-       // For now, we assume the provider handles it. Let's see if this is sufficient.
-    }
     
-    // If shop is configured, user is logged in, but PIN is not verified, go to login.
-    if (shopId && !isLoggedIn && !isSetupPage) {
+    // If shop is configured, but PIN is not verified, go to login.
+    // Do not redirect if we are already on the setup or login page.
+    if (shopId && !isLoggedIn && !isSetupPage && !isLoginPage) {
       router.replace('/admin/login');
       return;
     }
 
-  }, [isClient, initialized, isLoggedIn, router, shopId, shopOwnerId, firebaseUser, isUserLoading, pathname]);
+  }, [isClient, initialized, isLoggedIn, router, shopId, isUserLoading, pathname]);
 
+  const isAuthPage = pathname.includes('/admin/setup') || pathname.includes('/admin/login');
 
-  if (!isClient || !initialized || isUserLoading || (!shopId && !pathname.includes('/setup')) || (shopId && !isLoggedIn && !pathname.includes('/setup'))) {
+  // While initializing, or if redirection is needed for a non-auth page, show a loader.
+  if (
+    (!isClient || !initialized || isUserLoading) ||
+    (!isAuthPage && (!shopId || !isLoggedIn))
+  ) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -57,6 +57,12 @@ export default function AdminAppLayout({
     );
   }
 
+  // For auth pages, render them directly without the main layout wrapper.
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+  
+  // For authenticated admin pages, render with the main mobile navigation.
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <main className="flex-1 p-4 pb-24">{children}</main>
