@@ -110,31 +110,33 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     const unsubscribe = onAuthStateChanged(
       auth,
-      async firebaseUser => {
+      (firebaseUser) => {
         // Auth state determined
         if (firebaseUser) {
-          try {
-            // Check for admin role in the 'admins' collection in Firestore
-            const adminDocRef = doc(firestore, 'admins', firebaseUser.uid);
-            const adminDocSnap = await getDoc(adminDocRef);
-            const isAdmin = adminDocSnap.exists() && adminDocSnap.data().role === 'ADMIN';
+          // Set user and stop loading immediately.
+          setUserAuthState(prevState => ({
+            ...prevState,
+            user: firebaseUser,
+            isUserLoading: false,
+            userError: null,
+          }));
 
-            setUserAuthState({
-              user: firebaseUser,
-              isUserLoading: false,
-              userError: null,
-              isAdmin,
-            });
-          } catch (error) {
-            console.error('FirebaseProvider: Error getting user admin role:', error);
-            // Still logged in, but role check failed. Treat as non-admin.
-            setUserAuthState({
-              user: firebaseUser,
-              isUserLoading: false,
-              userError: error as Error,
-              isAdmin: false,
-            });
-          }
+          // Check for admin status in the background
+          const checkAdminStatus = async () => {
+            try {
+              const adminDocRef = doc(firestore, 'admins', firebaseUser.uid);
+              const adminDocSnap = await getDoc(adminDocRef);
+              const isAdmin = adminDocSnap.exists() && adminDocSnap.data().role === 'ADMIN';
+
+              setUserAuthState(prevState => ({ ...prevState, isAdmin }));
+
+            } catch (error) {
+              console.error('FirebaseProvider: Error getting user admin role:', error);
+               setUserAuthState(prevState => ({ ...prevState, isAdmin: false }));
+            }
+          };
+          checkAdminStatus();
+
         } else {
           // No user logged in.
           setUserAuthState({
