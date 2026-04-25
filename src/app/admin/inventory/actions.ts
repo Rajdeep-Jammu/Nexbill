@@ -3,8 +3,6 @@
 import { z } from 'zod';
 import { productSchema } from './product-schema';
 import { generateProductDescription } from '@/ai/flows/generate-product-description';
-import { initializeFirebase } from '@/firebase/init';
-import { collection, doc, setDoc } from 'firebase/firestore';
 
 type FormState = {
   message: string;
@@ -13,66 +11,18 @@ type FormState = {
   description?: string;
 };
 
-const extendedProductSchema = productSchema.extend({
-  shopId: z.string(),
-  shopOwnerId: z.string(),
-});
-
-export async function addProduct(
-  prevState: FormState,
-  data: FormData
-): Promise<FormState> {
-  const formData = Object.fromEntries(data);
-  const parsed = extendedProductSchema.safeParse(formData);
-
-  if (!parsed.success) {
-    const fields: Record<string, string> = {};
-    for (const key of Object.keys(formData)) {
-      fields[key] = formData[key].toString();
-    }
-    return {
-      message: 'Invalid form data',
-      fields,
-      issues: parsed.error.issues.map(issue => issue.message),
-    };
-  }
-
-  const { shopId, shopOwnerId, ...productData } = parsed.data;
-
-  try {
-    const { firestore } = initializeFirebase();
-    const productsRef = collection(firestore, 'shops', shopId, 'products');
-    const newDocRef = doc(productsRef);
-
-    await setDoc(newDocRef, {
-      ...productData,
-      id: newDocRef.id,
-      shopId: shopId,
-      shopOwnerId: shopOwnerId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // Mocked for now, you can replace with a real image upload service
-      imageUrl: `https://picsum.photos/seed/${newDocRef.id}/400/400`,
-      imageHint: productData.category,
-    });
-  } catch (e: any) {
-    return {
-      message: `Error saving product: ${e.message}`,
-      fields: parsed.data,
-      issues: [e.message]
-    }
-  }
-
-
-  return { message: 'Product added successfully!' };
-}
-
 export async function generateDescriptionAction(
   prevState: FormState,
   data: FormData
 ): Promise<FormState> {
   const formData = Object.fromEntries(data);
-  const parsed = productSchema.safeParse(formData);
+  // We don't need to validate image here, just the fields for description generation.
+  const partialSchema = productSchema.pick({
+    productName: true,
+    category: true,
+    features: true,
+  });
+  const parsed = partialSchema.safeParse(formData);
 
   if (!parsed.success) {
     const fields: Record<string, string> = {};
@@ -95,15 +45,28 @@ export async function generateDescriptionAction(
       features: features || '',
     });
 
+    // Re-serialize fields for the form
+    const fields: Record<string, string> = {};
+    for (const key of Object.keys(formData)) {
+      fields[key] = formData[key].toString();
+    }
+
     return {
       message: 'Description generated',
       description: result.description,
-      fields: parsed.data,
+      fields: {
+        ...fields,
+        description: result.description,
+      },
     };
   } catch (error) {
+    const fields: Record<string, string> = {};
+    for (const key of Object.keys(formData)) {
+      fields[key] = formData[key].toString();
+    }
     return {
       message: 'Error generating description',
-      fields: parsed.data,
+      fields: fields,
       issues: ['AI service failed. Please try again or write a description manually.'],
     };
   }
