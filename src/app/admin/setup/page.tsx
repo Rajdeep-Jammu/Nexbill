@@ -25,6 +25,7 @@ export default function WelcomePage() {
   const [shopName, setShopName] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
+  const [secretCode, setSecretCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingConfig, setIsCheckingConfig] = useState(true);
   const [existingShopConfig, setExistingShopConfig] = useState<PublicConfig | null>(null);
@@ -63,7 +64,7 @@ export default function WelcomePage() {
             const configData = configSnap.data() as PublicConfig;
             setExistingShopConfig(configData);
             setShopName(configData.shopName);
-            setStep(2); // If a shop exists, skip directly to PIN setup.
+            setStep(1); // Stay on step 1 to enter secret code
           }
       }
       setIsCheckingConfig(false);
@@ -114,7 +115,21 @@ export default function WelcomePage() {
         if (!shopSnap.exists()) {
             throw new Error("The permanent shop's data could not be found. Please contact support.");
         }
-        const { id, name, shopOwnerId } = shopSnap.data();
+
+        const shopData = shopSnap.data();
+
+        // Validate the secret code
+        if (shopData.secretCode !== secretCode.toUpperCase()) {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid Secret Code',
+                description: 'The invite code you entered is incorrect. Please check with the shop owner.',
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
+        const { id, name, shopOwnerId } = shopData;
 
         // Load the existing shop's details and set the new local PIN.
         loadShopContext({ shopId: id, shopName: name, shopOwnerId });
@@ -127,6 +142,7 @@ export default function WelcomePage() {
 
       } else { 
         // Otherwise, the user is CREATING a new shop.
+        const newSecretCode = Math.random().toString(36).substring(2, 8).toUpperCase();
         const shopId = doc(collection(firestore, 'shops')).id;
         const shopRef = doc(firestore, 'shops', shopId);
 
@@ -136,6 +152,7 @@ export default function WelcomePage() {
           shopOwnerId: user.uid,
           currency: '₹',
           logoUrl: '',
+          secretCode: newSecretCode,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -182,6 +199,8 @@ export default function WelcomePage() {
   }
   
   const isJoining = !!existingShopConfig;
+  const showPinStep = !isJoining && step === 2;
+  const showJoinStep = isJoining;
 
   return (
     <main className="flex h-screen w-full flex-col items-center justify-center bg-background p-4">
@@ -194,16 +213,22 @@ export default function WelcomePage() {
         className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-white/10 bg-card/50 p-8 shadow-2xl backdrop-blur-lg"
       >
         <Logo className="h-12 w-12 text-primary" />
-        <h1 className="mt-6 font-headline text-3xl font-bold text-foreground">
-          {step === 1 ? (isJoining ? `Join ${shopName}` : "Let's Get Started") : 'Set Your Security PIN'}
+        <h1 className="mt-6 font-headline text-3xl font-bold text-foreground text-center">
+          {isJoining
+            ? `Join ${shopName}`
+            : step === 1
+            ? "Let's Get Started"
+            : 'Set Your Security PIN'}
         </h1>
         <p className="mt-2 text-center text-muted-foreground">
-          {step === 1
-            ? (isJoining ? "A shop has already been set up. Continue to set a local PIN for this device." : "First, what's the name of your shop?")
+          {isJoining
+            ? 'Enter the secret invite code provided by the shop owner, then create a PIN for this device.'
+            : step === 1
+            ? "First, what's the name of your shop?"
             : 'This PIN will be used to secure your shop data on this device.'}
         </p>
 
-        {step === 1 ? (
+        {!isJoining && step === 1 && (
           <div className="mt-8 w-full space-y-6">
             <div className="space-y-2">
               <Label htmlFor="shopName">Shop Name</Label>
@@ -225,8 +250,24 @@ export default function WelcomePage() {
               Continue
             </Button>
           </div>
-        ) : (
+        )}
+
+        {(showPinStep || showJoinStep) && (
           <div className="mt-8 w-full space-y-6">
+            {isJoining && (
+              <div className="space-y-2">
+                <Label htmlFor="secret-code">Shop Invite Code</Label>
+                <Input
+                  id="secret-code"
+                  placeholder="Enter Invite Code"
+                  value={secretCode}
+                  onChange={e => setSecretCode(e.target.value)}
+                  className="h-12 text-base font-mono uppercase"
+                  autoCapitalize='characters'
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Create a 4-digit PIN</Label>
               <PinInput value={pin} onChange={setPin} />
@@ -240,7 +281,10 @@ export default function WelcomePage() {
               className="w-full text-base font-bold"
               size="lg"
               disabled={
-                pin.length !== 4 || confirmPin.length !== 4 || isSubmitting
+                pin.length !== 4 ||
+                confirmPin.length !== 4 ||
+                isSubmitting ||
+                (isJoining && secretCode.length === 0)
               }
             >
               {isSubmitting ? (

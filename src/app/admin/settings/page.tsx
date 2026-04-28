@@ -25,7 +25,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, KeyRound, QrCode, Wallet, Loader2, Edit } from 'lucide-react';
+import { LogOut, KeyRound, QrCode, Wallet, Loader2, Edit, Copy } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,9 @@ import { ChangePinDialog } from '@/components/settings/ChangePinDialog';
 import ImageInput from '@/components/inventory/ImageInput';
 import { getCloudinarySignatureAction } from '@/lib/actions/cloudinary';
 import { ChangeShopNameDialog } from '@/components/settings/ChangeShopNameDialog';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -46,12 +49,21 @@ export default function SettingsPage() {
     upiId,
     qrCodeUrl,
     setPaymentDetails,
+    shopId,
   } = useAuthStore();
   const { clearCart } = useBillingStore();
+  const firestore = useFirestore();
 
   const [localUpiId, setLocalUpiId] = useState(upiId || '');
   const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
   const [isSavingPayment, setIsSavingPayment] = useState(false);
+
+  const shopRef = useMemoFirebase(
+    () => (shopId ? doc(firestore, 'shops', shopId) : null),
+    [firestore, shopId]
+  );
+  const { data: shopData, isLoading: isShopLoading } = useDoc(shopRef);
+  const secretCode = (shopData as any)?.secretCode;
 
   const handleLogout = () => {
     logout();
@@ -142,6 +154,15 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCopyCode = () => {
+    if (!secretCode) return;
+    navigator.clipboard.writeText(secretCode);
+    toast({
+        title: "Code Copied!",
+        description: "The shop invite code has been copied to your clipboard.",
+    });
+  }
+
   return (
     <div>
       <PageHeader title="Settings" />
@@ -211,6 +232,39 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle>Shop Invite Code</CardTitle>
+            <CardDescription>
+              Share this code with other users to allow them to join and manage
+              this shop.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isShopLoading ? (
+              <Skeleton className="h-16 w-full" />
+            ) : secretCode ? (
+              <div
+                className="flex items-center gap-4"
+                onClick={handleCopyCode}
+              >
+                <div className="flex-1 cursor-pointer rounded-xl border-2 border-dashed border-border bg-muted/50 p-4 text-center">
+                  <p className="font-mono text-3xl font-bold tracking-widest text-primary">
+                    {secretCode}
+                  </p>
+                </div>
+                <Button variant="outline" size="icon" onClick={handleCopyCode}>
+                  <Copy className="h-5 w-5" />
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No invite code found for this shop.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Payment Settings</CardTitle>
             <CardDescription>
               Configure QR code and UPI details for receiving payments.
@@ -236,7 +290,10 @@ export default function SettingsPage() {
               </Label>
               <ImageInput onChange={setQrCodeFile} initialImageUrl={qrCodeUrl} />
             </div>
-            <Button onClick={handlePaymentDetailsSave} disabled={isSavingPayment}>
+            <Button
+              onClick={handlePaymentDetailsSave}
+              disabled={isSavingPayment}
+            >
               {isSavingPayment ? (
                 <Loader2 className="animate-spin" />
               ) : (

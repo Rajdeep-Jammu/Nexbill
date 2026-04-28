@@ -27,6 +27,10 @@
           "type": "string",
           "description": "Reference to the external user account that owns or manages this shop. (Relationship: User 1:1 Shop)"
         },
+        "secretCode": {
+          "type": "string",
+          "description": "A unique, shareable code for other admins to join the shop."
+        },
         "createdAt": {
           "type": "string",
           "description": "The timestamp indicating when the shop record was created.",
@@ -43,6 +47,7 @@
         "name",
         "currency",
         "shopOwnerId",
+        "secretCode",
         "createdAt",
         "updatedAt"
       ]
