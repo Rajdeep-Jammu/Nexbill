@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDoc } from 'firebase/firestore';
 
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Logo } from '@/components/Logo';
@@ -15,15 +15,22 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 
+type PublicConfig = {
+  activeShopId: string;
+  shopName: string;
+};
+
 export default function WelcomePage() {
   const [step, setStep] = useState(1);
   const [shopName, setShopName] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingConfig, setIsCheckingConfig] = useState(true);
+  const [existingShopConfig, setExistingShopConfig] = useState<PublicConfig | null>(null);
 
   const router = useRouter();
-  const setupShop = useAuthStore(state => state.setup);
+  const { setup, loadShopContext, setPin: setAuthPin, shopId: existingShopId } = useAuthStore();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -33,11 +40,42 @@ export default function WelcomePage() {
       toast({
         variant: 'destructive',
         title: 'Authentication Required',
-        description: 'You must be logged in to set up a shop.',
+        description: 'You must be logged in to set up or join a shop.',
       });
       router.replace('/login');
     }
   }, [user, isUserLoading, router, toast]);
+
+  // If a shop is already configured in the store, redirect away from setup.
+  useEffect(() => {
+    if (existingShopId) {
+      router.replace('/admin/login');
+    }
+  }, [existingShopId, router]);
+  
+  // Check for an existing public shop config.
+  useEffect(() => {
+    const checkConfig = async () => {
+      if (firestore && !existingShopId) {
+          const configRef = doc(firestore, 'public', 'config');
+          const configSnap = await getDoc(configRef);
+          if (configSnap.exists()) {
+            const configData = configSnap.data() as PublicConfig;
+            setExistingShopConfig(configData);
+            setShopName(configData.shopName);
+            setStep(2); // If a shop exists, skip directly to PIN setup.
+          }
+      }
+      setIsCheckingConfig(false);
+    };
+
+    if(!isUserLoading && !existingShopId) {
+      checkConfig();
+    } else {
+      setIsCheckingConfig(false);
+    }
+  }, [firestore, isUserLoading, existingShopId]);
+
 
   const handleNext = () => {
     if (shopName.trim().length < 3) {
@@ -53,70 +91,74 @@ export default function WelcomePage() {
 
   const handleSetup = async () => {
     if (pin.length !== 4) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid PIN',
-        description: 'Your PIN must be 4 digits long.',
-      });
+      toast({ variant: 'destructive', title: 'Invalid PIN', description: 'Your PIN must be 4 digits long.' });
       return;
     }
     if (pin !== confirmPin) {
-      toast({
-        variant: 'destructive',
-        title: 'PIN Mismatch',
-        description: 'The confirmation PIN does not match.',
-      });
+      toast({ variant: 'destructive', title: 'PIN Mismatch', description: 'The confirmation PIN does not match.' });
       setConfirmPin('');
       return;
     }
-
     if (!user) {
-      toast({
-        variant: 'destructive',
-        title: 'Setup Failed',
-        description: 'User not found. Please log in again.',
-      });
+      toast({ variant: 'destructive', title: 'Setup Failed', description: 'User not found. Please log in again.'});
       return;
     }
 
     setIsSubmitting(true);
     
     try {
-      // 1. Create shop document in Firestore
-      const shopId = doc(collection(firestore, 'shops')).id;
-      const shopRef = doc(firestore, 'shops', shopId);
+      // If an existing shop config was found, the user is JOINING it.
+      if (existingShopConfig) {
+        const shopRef = doc(firestore, 'shops', existingShopConfig.activeShopId);
+        const shopSnap = await getDoc(shopRef);
+        if (!shopSnap.exists()) {
+            throw new Error("The permanent shop's data could not be found. Please contact support.");
+        }
+        const { id, name, shopOwnerId } = shopSnap.data();
 
-      await setDoc(shopRef, {
-        id: shopId,
-        name: shopName,
-        shopOwnerId: user.uid,
-        currency: '₹',
-        logoUrl: '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      
-      // Also set this as the public shop for customers to see
-      await setDoc(doc(firestore, 'public', 'config'), {
-        activeShopId: shopId,
-        shopName: shopName,
-      });
+        // Load the existing shop's details and set the new local PIN.
+        loadShopContext({ shopId: id, shopName: name, shopOwnerId });
+        setAuthPin(pin);
 
-      // Make the creator an admin
-      const adminRef = doc(firestore, 'admins', user.uid);
-      await setDoc(adminRef, {
-        uid: user.uid,
-        role: 'ADMIN',
-        email: user.email || '',
-      });
+        toast({
+          title: 'Shop Joined!',
+          description: `You can now access ${name}.`,
+        });
 
-      // 2. Save details to local store
-      setupShop(shopName, pin, shopId, user.uid);
+      } else { 
+        // Otherwise, the user is CREATING a new shop.
+        const shopId = doc(collection(firestore, 'shops')).id;
+        const shopRef = doc(firestore, 'shops', shopId);
 
-      toast({
-        title: 'Setup Complete!',
-        description: `Welcome to ${shopName}. Your shop is ready.`,
-      });
+        await setDoc(shopRef, {
+          id: shopId,
+          name: shopName,
+          shopOwnerId: user.uid,
+          currency: '₹',
+          logoUrl: '',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        
+        await setDoc(doc(firestore, 'public', 'config'), {
+          activeShopId: shopId,
+          shopName: shopName,
+        });
+
+        const adminRef = doc(firestore, 'admins', user.uid);
+        await setDoc(adminRef, {
+          uid: user.uid,
+          role: 'ADMIN',
+          email: user.email || '',
+        });
+
+        setup(shopName, pin, shopId, user.uid);
+
+        toast({
+          title: 'Setup Complete!',
+          description: `Welcome to ${shopName}. Your shop is ready.`,
+        });
+      }
       
       router.replace('/admin/login');
 
@@ -131,13 +173,15 @@ export default function WelcomePage() {
     }
   };
   
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || isCheckingConfig || existingShopId) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
+  
+  const isJoining = !!existingShopConfig;
 
   return (
     <main className="flex h-screen w-full flex-col items-center justify-center bg-background p-4">
@@ -151,11 +195,11 @@ export default function WelcomePage() {
       >
         <Logo className="h-12 w-12 text-primary" />
         <h1 className="mt-6 font-headline text-3xl font-bold text-foreground">
-          {step === 1 ? "Let's Get Started" : 'Set Your Security PIN'}
+          {step === 1 ? (isJoining ? `Join ${shopName}` : "Let's Get Started") : 'Set Your Security PIN'}
         </h1>
         <p className="mt-2 text-center text-muted-foreground">
           {step === 1
-            ? "First, what's the name of your shop?"
+            ? (isJoining ? "A shop has already been set up. Continue to set a local PIN for this device." : "First, what's the name of your shop?")
             : 'This PIN will be used to secure your shop data on this device.'}
         </p>
 
@@ -169,6 +213,7 @@ export default function WelcomePage() {
                 value={shopName}
                 onChange={e => setShopName(e.target.value)}
                 className="h-12 text-base"
+                disabled={isJoining}
               />
             </div>
             <Button
@@ -201,7 +246,7 @@ export default function WelcomePage() {
               {isSubmitting ? (
                 <Loader2 className="animate-spin" />
               ) : (
-                'Finish Setup'
+                isJoining ? 'Join Shop' : 'Finish Setup'
               )}
             </Button>
           </div>

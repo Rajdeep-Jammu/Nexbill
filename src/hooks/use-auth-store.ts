@@ -21,6 +21,7 @@ interface AuthState {
     shopName: string;
     shopOwnerId: string;
   }) => void;
+  setPin: (pin: string) => void;
   login: () => void;
   logout: () => void;
   reset: () => void;
@@ -46,6 +47,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       ...initialState,
       setup: (shopName, pin, shopId, shopOwnerId) => {
+        // For initial setup, we start fresh.
         set({
           ...initialState,
           shopName,
@@ -55,30 +57,31 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       loadShopContext: shopDetails => {
-        set({
+        set(state => ({
+          ...state,
           shopId: shopDetails.shopId,
           shopName: shopDetails.shopName,
           shopOwnerId: shopDetails.shopOwnerId,
-        });
+        }));
       },
-      login: () => set({ isLoggedIn: true }),
-      logout: () => set({ isLoggedIn: false }),
+      setPin: pin => set(state => ({ ...state, pin, isLoggedIn: false })),
+      login: () => set(state => ({ ...state, isLoggedIn: true })),
+      logout: () => set(state => ({ ...state, isLoggedIn: false })),
       reset: () => {
-        // Also clear firebase auth? For now, just clears local state.
         set(initialState);
       },
       toggleBiometric: () =>
-        set(state => ({ biometricEnabled: !state.biometricEnabled })),
+        set(state => ({ ...state, biometricEnabled: !state.biometricEnabled })),
       changePin: (oldPin: string, newPin: string) => {
         if (get().pin === oldPin) {
-          set({ pin: newPin });
+          set(state => ({ ...state, pin: newPin }));
           return true;
         }
         return false;
       },
       setPaymentDetails: details =>
-        set({ upiId: details.upiId, qrCodeUrl: details.qrCodeUrl }),
-      setShopName: shopName => set({ shopName }),
+        set(state => ({ ...state, upiId: details.upiId, qrCodeUrl: details.qrCodeUrl })),
+      setShopName: shopName => set(state => ({ ...state, shopName })),
     }),
     {
       name: 'auth-storage',

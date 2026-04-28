@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useMemo, useState, useEffect } from 'react';
 import { collection, query, where, doc } from 'firebase/firestore';
@@ -11,7 +10,6 @@ import CustomerLayout from '../customer-layout';
 import PageHeader from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Loader2, ShoppingBag, DollarSign, BarChartHorizontalBig, Hash } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,6 +42,13 @@ export default function ProfilePage() {
     setIsClient(true);
   }, []);
 
+  useEffect(() => {
+    // If auth state is resolved, and there's no user, redirect to login.
+    if (isClient && !isUserLoading && !user) {
+      router.replace('/login');
+    }
+  }, [isClient, isUserLoading, user, router]);
+
   const stats = useMemo(() => {
     if (!userSales) return { totalSpent: 0, totalOrders: 0, totalItems: 0, avgOrderValue: 0 };
     const totalSpent = userSales.reduce((acc, bill) => acc + bill.totalAmount, 0);
@@ -59,42 +64,12 @@ export default function ProfilePage() {
     }
   }, [userSales]);
 
-  if (!isClient || isUserLoading) {
+  // Show a loader while waiting for client, auth state, or if there's no user (before redirect).
+  if (!isClient || isUserLoading || !user) {
     return (
       <CustomerLayout>
         <div className="flex h-[60vh] w-full items-center justify-center bg-background">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </CustomerLayout>
-    );
-  }
-
-  if (!user) {
-    return (
-      <CustomerLayout>
-        <PageHeader title="Dashboard" />
-        <div className="flex items-center justify-center">
-          <Card className="w-full max-w-md text-center p-8 bg-card/50 backdrop-blur-lg border-white/10">
-            <CardHeader>
-              <Avatar className="h-24 w-24 mx-auto mb-4">
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-              <CardTitle className="text-2xl">Hello, Guest!</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-6">
-                Log in or create an account to view your dashboard and manage your details.
-              </p>
-              <div className="flex gap-4 justify-center">
-                <Link href="/login">
-                  <Button>Login</Button>
-                </Link>
-                <Link href="/signup">
-                  <Button variant="secondary">Sign Up</Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </CustomerLayout>
     );
