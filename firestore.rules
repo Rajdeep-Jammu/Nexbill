@@ -108,6 +108,21 @@ service cloud.firestore {
       return isSignedIn() && docData.customerAuthUid != null && request.auth.uid == docData.customerAuthUid;
     }
 
+    /**
+     * Validates that a list query on the 'bills' collection is only
+     * requesting documents for the currently authenticated user.
+     */
+    function isQueryingOwnBills() {
+      // The query must contain exactly one 'where' clause.
+      return request.query.where.size() == 1 &&
+             // The clause must be on the 'customerAuthUid' field.
+             request.query.where[0][0] == 'customerAuthUid' &&
+             // The operator must be '=='.
+             request.query.where[0][1] == '==' &&
+             // The value must be the UID of the user making the request.
+             request.query.where[0][2] == request.auth.uid;
+    }
+
     // --------------------------------
     // Collection Rules
     // --------------------------------
@@ -187,7 +202,7 @@ service cloud.firestore {
      */
     match /shops/{shopId}/bills/{billId} {
       allow get: if canManageShop(shopId) || isDocumentCustomer(resource.data);
-      allow list: if canManageShop(shopId) || (isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'customerAuthUid' && request.query.where[0][2] == request.auth.uid);
+      allow list: if canManageShop(shopId) || (isSignedIn() && isQueryingOwnBills());
       allow create, update, delete: if canManageShop(shopId);
 
       /**
