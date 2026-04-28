@@ -10,21 +10,17 @@ import {
   serverTimestamp,
   setDoc,
 } from 'firebase/firestore';
-import {
-  ref as storageRef,
-  uploadBytes,
-  getDownloadURL,
-} from 'firebase/storage';
 
 import { productSchema, type ProductFormData } from '@/app/admin/inventory/product-schema';
 import { generateDescriptionAction } from '@/app/admin/inventory/actions';
+import { getCloudinarySignatureAction } from '@/lib/actions/cloudinary';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/hooks/use-auth-store';
-import { useFirestore, useStorage } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import ImageInput from './ImageInput';
 
 const initialState = {
@@ -36,7 +32,6 @@ export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void })
   const formRef = useRef<HTMLFormElement>(null);
   const { shopId, shopOwnerId } = useAuthStore();
   const firestore = useFirestore();
-  const storage = useStorage();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -98,11 +93,30 @@ export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void })
         // Check if a new image file was provided
         if (values.image && values.image instanceof File) {
             const file = values.image;
-            const filePath = `products/${shopId}/${Date.now()}-${file.name}`;
-            const fileRef = storageRef(storage, filePath);
+            const { timestamp, signature, error } = await getCloudinarySignatureAction('products');
+            if (error) throw new Error(error);
 
-            await uploadBytes(fileRef, file);
-            imageUrl = await getDownloadURL(fileRef);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
+            formData.append('signature', signature);
+            formData.append('timestamp', timestamp.toString());
+            formData.append('folder', 'products');
+
+            const endpoint = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!}/image/upload`;
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                imageUrl = data.secure_url;
+            } else {
+                 const errorData = await response.json();
+                 throw new Error(`Cloudinary upload failed: ${errorData.error.message}`);
+            }
         }
 
         const productsRef = collection(firestore, 'shops', shopId, 'products');
