@@ -48,7 +48,7 @@ export default function LoginPage() {
         title: 'Login Successful',
         description: 'Welcome back!',
       });
-      router.push('/profile');
+      router.replace('/profile');
     } catch (error: any) {
       toast({
         variant: 'destructive',

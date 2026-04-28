@@ -69,7 +69,7 @@ export default function SignupPage() {
         title: 'Account Created',
         description: "You've been successfully signed up!",
       });
-      router.push('/profile');
+      router.replace('/profile');
     } catch (error: any) {
       toast({
         variant: 'destructive',

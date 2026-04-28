@@ -28,11 +28,12 @@ export function CustomerHeader() {
   const { totalItems } = useBillingStore();
   const { user, isUserLoading, isAdmin } = useUser();
   const cartItemCount = totalItems();
+  const homeHref = user ? '/profile' : '/';
 
   return (
     <header className="hidden lg:flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur-lg z-40">
       <div className="flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href={homeHref} className="flex items-center gap-2">
           <Logo className="h-7 w-7 text-primary" />
           <span className="font-headline text-xl font-bold">NexBill</span>
         </Link>
