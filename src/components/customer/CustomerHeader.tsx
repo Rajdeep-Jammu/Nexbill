@@ -9,28 +9,27 @@ import {
   LogIn,
   UserPlus,
   Shield,
+  LayoutDashboard,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Logo } from '@/components/Logo';
 import { useBillingStore } from '@/hooks/use-billing-store';
 import { cn } from '@/lib/utils';
-import { useUser, useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
 
-const navItems = [{ href: '/', icon: ShoppingBag, label: 'Products' }];
+const navItems = [
+  { href: '/profile', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/', label: 'Products', icon: ShoppingBag },
+];
 
 export function CustomerHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { totalItems } = useBillingStore();
   const { user, isUserLoading, isAdmin } = useUser();
-  const auth = useAuth();
   const cartItemCount = totalItems();
-
-  const handleLogout = async () => {
-    await auth.signOut();
-    router.push('/');
-  };
 
   return (
     <header className="hidden lg:flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur-lg z-40">
@@ -40,24 +39,37 @@ export function CustomerHeader() {
           <span className="font-headline text-xl font-bold">NexBill</span>
         </Link>
         <nav className="flex items-center gap-4">
-          {navItems.map(item => (
+          {user && navItems.map(item => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                pathname === item.href
+                'flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary',
+                 (pathname === '/' && item.href === '/') || (item.href !== '/' && pathname.startsWith(item.href))
                   ? 'text-primary'
                   : 'text-muted-foreground'
               )}
             >
+              <item.icon className="h-4 w-4" />
               {item.label}
             </Link>
           ))}
+          {!user && (
+             <Link
+              href="/"
+              className={cn(
+                'flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary',
+                 pathname === '/' ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
+              <ShoppingBag className="h-4 w-4" />
+              Products
+            </Link>
+          )}
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <Link href="/cart">
           <Button variant="ghost" size="icon" className="relative">
             <ShoppingCart />
@@ -76,15 +88,12 @@ export function CustomerHeader() {
         {!isUserLoading &&
           (user ? (
             <>
-              <Link href="/profile">
+              <Link href="/settings">
                 <Button variant="ghost" size="icon">
-                  <ProfileIcon />
-                  <span className="sr-only">Profile</span>
+                  <Settings />
+                  <span className="sr-only">Settings</span>
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                Logout
-              </Button>
             </>
           ) : (
             <>
@@ -95,7 +104,7 @@ export function CustomerHeader() {
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button variant="outline" size="sm">
+                <Button>
                   <UserPlus className="mr-2" />
                   Sign Up
                 </Button>
@@ -105,7 +114,7 @@ export function CustomerHeader() {
 
         {isAdmin && (
           <Link href="/admin/login">
-            <Button>
+            <Button variant="outline">
               <Shield className="mr-2" />
               Admin Panel
             </Button>

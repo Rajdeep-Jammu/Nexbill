@@ -5,9 +5,10 @@ import { usePathname } from "next/navigation";
 import {
   ShoppingBag,
   ShoppingCart,
-  User,
-  LogIn,
+  LayoutDashboard,
+  Settings,
   Shield,
+  LogIn,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useBillingStore } from "@/hooks/use-billing-store";
@@ -22,22 +23,36 @@ export default function CustomerMobileNav() {
   const { user, isUserLoading, isAdmin } = useUser();
   const cartItemCount = totalItems();
 
-  const navItems = [
-    { href: "/", icon: ShoppingBag, label: "Products" },
-    { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount },
-    {
-      href: user ? "/profile" : "/login",
-      icon: user ? User : LogIn,
-      label: user ? "Profile" : "Login",
-    },
-  ];
+  let navItems = [];
+  if (user) {
+    navItems.push(
+      { href: "/profile", icon: LayoutDashboard, label: "Dashboard" },
+      { href: "/", icon: ShoppingBag, label: "Products" },
+      { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount },
+      { href: "/settings", icon: Settings, label: "Settings" }
+    );
+  } else {
+     navItems.push(
+      { href: "/", icon: ShoppingBag, label: "Products" },
+      { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount },
+      { href: "/login", icon: LogIn, label: "Login" }
+    );
+  }
 
   if (isAdmin) {
-    navItems.push({ href: "/admin/login", icon: Shield, label: "Admin" });
+    // Avoid adding duplicate admin link if user is admin but not logged in as a regular user
+    if(!navItems.find(i => i.href === '/admin/login')) {
+      navItems.push({ href: "/admin/login", icon: Shield, label: "Admin" });
+    }
   }
 
   if (isUserLoading) return null;
 
+  const isActive = (href: string) => {
+    // Exact match for root, startsWith for others.
+    return (href === "/" && pathname === "/") || (href !== "/" && pathname.startsWith(href));
+  };
+  
   return (
     <motion.div
       initial={{ y: 100 }}
@@ -56,8 +71,7 @@ export default function CustomerMobileNav() {
               <item.icon
                 className={cn(
                   "h-6 w-6 transition-colors",
-                  (pathname.startsWith(item.href) && item.href !== "/") ||
-                    pathname === item.href
+                  isActive(item.href)
                     ? "text-primary"
                     : "text-muted-foreground"
                 )}
@@ -71,8 +85,7 @@ export default function CustomerMobileNav() {
                 </Badge>
               )}
             </motion.div>
-            {((pathname.startsWith(item.href) && item.href !== "/") ||
-              pathname === item.href) && (
+            {isActive(item.href) && (
               <motion.div
                 layoutId="customer-active-indicator"
                 className="absolute bottom-1 h-1 w-6 rounded-full bg-primary"

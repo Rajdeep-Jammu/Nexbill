@@ -20,8 +20,12 @@ export default function StatCard({
   isWarning = false,
 }: StatCardProps) {
   return (
-    <motion.div whileHover={{ y: -5, scale: 1.02 }}>
-      <Card className="rounded-2xl border-white/10 bg-card/50 shadow-lg backdrop-blur-lg">
+    <motion.div 
+        whileHover={{ y: -8, scale: 1.05, rotateZ: 2 }}
+        transition={{ type: 'spring', stiffness: 300 }}
+        className="w-full"
+    >
+      <Card className="rounded-2xl border-white/10 bg-card/50 shadow-xl backdrop-blur-lg h-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
             {title}
