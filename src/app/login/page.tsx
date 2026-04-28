@@ -21,7 +21,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, isAdmin } = useUser();
 
   // If user is already logged in, redirect to profile
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function LoginPage() {
           </Link>
         </p>
          <p className="text-xs text-muted-foreground mt-8">
-            Are you a shop owner? <Link href="/admin/login" className="text-primary hover:underline">Go to Admin Panel</Link>
+            <Link href="/admin/login" className="text-primary hover:underline">Shop Owner? Access the Admin Panel</Link>
         </p>
       </motion.div>
     </main>

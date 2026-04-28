@@ -11,6 +11,7 @@ import { PinInput } from "@/components/auth/PinInput";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { useUser } from "@/firebase";
 
 export default function LoginPage() {
   const [pin, setPin] = useState("");
@@ -19,17 +20,22 @@ export default function LoginPage() {
   const { shopName, pin: storedPin, login, biometricEnabled } = useAuthStore();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
+    if (isClient && !isUserLoading && !user) {
+        router.replace('/login');
+        return;
+    }
     // Wait until the store is rehydrated from localStorage before checking credentials
     if (isClient && (!shopName || !storedPin)) {
       router.replace("/admin/setup");
     }
-  }, [isClient, shopName, storedPin, router]);
+  }, [isClient, shopName, storedPin, router, user, isUserLoading]);
 
   const handleLogin = () => {
     setIsLoggingIn(true);
@@ -77,7 +83,7 @@ export default function LoginPage() {
   }
 
   // Show a loader while the component is mounting and store is hydrating
-  if (!isClient) {
+  if (!isClient || isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -95,9 +101,9 @@ export default function LoginPage() {
       >
         <Logo className="h-12 w-12 text-primary" />
         <h1 className="mt-6 font-headline text-3xl font-bold text-foreground">
-          Welcome to {shopName}
+          {shopName ? `Welcome to ${shopName}`: "Admin Login"}
         </h1>
-        <p className="mt-2 text-muted-foreground">Enter your PIN to continue</p>
+        <p className="mt-2 text-muted-foreground">Enter your PIN to access the admin panel</p>
 
         <div className="my-8 flex items-center gap-4">
           <PinInput value={pin} onChange={setPin} />
@@ -130,9 +136,9 @@ export default function LoginPage() {
           )}
         </div>
         <p className="mt-6 text-sm text-muted-foreground">
-          Not your shop?{" "}
-          <Link href="/admin/setup" className="text-primary hover:underline">
-            Set up a new one
+          Not a shop owner?{" "}
+          <Link href="/" className="text-primary hover:underline">
+            Go to customer view
           </Link>
         </p>
       </motion.div>

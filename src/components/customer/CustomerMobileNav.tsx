@@ -24,13 +24,21 @@ export default function CustomerMobileNav() {
   const cartItemCount = totalItems();
 
   let navItems = [];
+  
+  if (isUserLoading) {
+    return null; // Don't render anything while auth state is resolving
+  }
+
   if (user) {
     navItems.push(
       { href: "/profile", icon: LayoutDashboard, label: "Dashboard" },
       { href: "/", icon: ShoppingBag, label: "Products" },
-      { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount },
-      { href: "/settings", icon: Settings, label: "Settings" }
+      { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount }
     );
+     if (isAdmin) {
+      navItems.push({ href: "/admin/login", icon: Shield, label: "Admin" });
+    }
+    navItems.push({ href: "/settings", icon: Settings, label: "Settings" });
   } else {
      navItems.push(
       { href: "/", icon: ShoppingBag, label: "Products" },
@@ -39,18 +47,9 @@ export default function CustomerMobileNav() {
     );
   }
 
-  if (isAdmin) {
-    // Avoid adding duplicate admin link if user is admin but not logged in as a regular user
-    if(!navItems.find(i => i.href === '/admin/login')) {
-      navItems.push({ href: "/admin/login", icon: Shield, label: "Admin" });
-    }
-  }
-
-  if (isUserLoading) return null;
-
   const isActive = (href: string) => {
-    // Exact match for root, startsWith for others.
-    return (href === "/" && pathname === "/") || (href !== "/" && pathname.startsWith(href));
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
   };
   
   return (

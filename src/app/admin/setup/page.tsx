@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { signInAnonymously } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 
 import { useAuthStore } from '@/hooks/use-auth-store';
@@ -14,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 
 export default function WelcomePage() {
   const [step, setStep] = useState(1);
@@ -26,8 +25,19 @@ export default function WelcomePage() {
   const router = useRouter();
   const setupShop = useAuthStore(state => state.setup);
   const { toast } = useToast();
-  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'You must be logged in to set up a shop.',
+      });
+      router.replace('/login');
+    }
+  }, [user, isUserLoading, router, toast]);
 
   const handleNext = () => {
     if (shopName.trim().length < 3) {
@@ -60,18 +70,19 @@ export default function WelcomePage() {
       return;
     }
 
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Setup Failed',
+        description: 'User not found. Please log in again.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      // 1. Sign in anonymously
-      const userCredential = await signInAnonymously(auth);
-      const user = userCredential.user;
-
-      if (!user) {
-        throw new Error("Couldn't create an anonymous user.");
-      }
-
-      // 2. Create shop document in Firestore
+      // 1. Create shop document in Firestore
       const shopId = doc(collection(firestore, 'shops')).id;
       const shopRef = doc(firestore, 'shops', shopId);
 
@@ -91,7 +102,15 @@ export default function WelcomePage() {
         shopName: shopName,
       });
 
-      // 3. Save details to local store
+      // Make the creator an admin
+      const adminRef = doc(firestore, 'admins', user.uid);
+      await setDoc(adminRef, {
+        uid: user.uid,
+        role: 'ADMIN',
+        email: user.email || '',
+      });
+
+      // 2. Save details to local store
       setupShop(shopName, pin, shopId, user.uid);
 
       toast({
@@ -111,6 +130,14 @@ export default function WelcomePage() {
       setIsSubmitting(false);
     }
   };
+  
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <main className="flex h-screen w-full flex-col items-center justify-center bg-background p-4">
@@ -129,7 +156,7 @@ export default function WelcomePage() {
         <p className="mt-2 text-center text-muted-foreground">
           {step === 1
             ? "First, what's the name of your shop?"
-            : 'This PIN will be used to secure your shop data.'}
+            : 'This PIN will be used to secure your shop data on this device.'}
         </p>
 
         {step === 1 ? (

@@ -101,42 +101,31 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
-    setUserAuthState({
-      user: null,
-      isUserLoading: true,
-      userError: null,
-      isAdmin: false,
-    }); // Reset on auth instance change
-
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => {
-        // Auth state determined
+      async (firebaseUser) => {
         if (firebaseUser) {
-          // Set user and stop loading immediately.
-          setUserAuthState(prevState => ({
-            ...prevState,
-            user: firebaseUser,
-            isUserLoading: false,
-            userError: null,
-          }));
+          try {
+            const adminDocRef = doc(firestore, 'admins', firebaseUser.uid);
+            const adminDocSnap = await getDoc(adminDocRef);
+            const isAdmin = adminDocSnap.exists() && adminDocSnap.data().role === 'ADMIN';
 
-          // Check for admin status in the background
-          const checkAdminStatus = async () => {
-            try {
-              const adminDocRef = doc(firestore, 'admins', firebaseUser.uid);
-              const adminDocSnap = await getDoc(adminDocRef);
-              const isAdmin = adminDocSnap.exists() && adminDocSnap.data().role === 'ADMIN';
+            setUserAuthState({
+              user: firebaseUser,
+              isUserLoading: false,
+              userError: null,
+              isAdmin: isAdmin,
+            });
 
-              setUserAuthState(prevState => ({ ...prevState, isAdmin }));
-
-            } catch (error) {
-              console.error('FirebaseProvider: Error getting user admin role:', error);
-               setUserAuthState(prevState => ({ ...prevState, isAdmin: false }));
-            }
-          };
-          checkAdminStatus();
-
+          } catch (error) {
+            console.error('FirebaseProvider: Error getting user admin role:', error);
+            setUserAuthState({
+              user: firebaseUser,
+              isUserLoading: false,
+              userError: error as Error,
+              isAdmin: false,
+            });
+          }
         } else {
           // No user logged in.
           setUserAuthState({

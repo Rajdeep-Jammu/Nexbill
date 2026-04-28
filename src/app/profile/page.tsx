@@ -93,12 +93,6 @@ export default function ProfilePage() {
                   <Button variant="secondary">Sign Up</Button>
                 </Link>
               </div>
-              <p className="text-xs text-muted-foreground mt-8">
-                Are you a shop owner?{' '}
-                <Link href="/admin/login" className="text-primary hover:underline">
-                  Go to Admin Panel
-                </Link>
-              </p>
             </CardContent>
           </Card>
         </div>

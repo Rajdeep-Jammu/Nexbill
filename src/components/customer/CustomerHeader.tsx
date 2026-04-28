@@ -1,16 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   ShoppingBag,
   ShoppingCart,
-  User as ProfileIcon,
+  Settings,
   LogIn,
   UserPlus,
   Shield,
   LayoutDashboard,
-  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +25,6 @@ const navItems = [
 
 export function CustomerHeader() {
   const pathname = usePathname();
-  const router = useRouter();
   const { totalItems } = useBillingStore();
   const { user, isUserLoading, isAdmin } = useUser();
   const cartItemCount = totalItems();
@@ -45,7 +43,7 @@ export function CustomerHeader() {
               href={item.href}
               className={cn(
                 'flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary',
-                 (pathname === '/' && item.href === '/') || (item.href !== '/' && pathname.startsWith(item.href))
+                 (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href))
                   ? 'text-primary'
                   : 'text-muted-foreground'
               )}
@@ -85,9 +83,18 @@ export function CustomerHeader() {
           </Button>
         </Link>
 
-        {!isUserLoading &&
-          (user ? (
+        {isUserLoading ? (
+            <div className='w-20 h-10 animate-pulse bg-muted rounded-md' />
+        ) : user ? (
             <>
+              {isAdmin && (
+                <Link href="/admin/login">
+                  <Button variant="outline" size="icon">
+                    <Shield />
+                    <span className="sr-only">Admin Panel</span>
+                  </Button>
+                </Link>
+              )}
               <Link href="/settings">
                 <Button variant="ghost" size="icon">
                   <Settings />
@@ -110,16 +117,7 @@ export function CustomerHeader() {
                 </Button>
               </Link>
             </>
-          ))}
-
-        {isAdmin && (
-          <Link href="/admin/login">
-            <Button variant="outline">
-              <Shield className="mr-2" />
-              Admin Panel
-            </Button>
-          </Link>
-        )}
+          )}
       </div>
     </header>
   );
