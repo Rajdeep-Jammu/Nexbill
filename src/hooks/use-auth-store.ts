@@ -11,6 +11,7 @@ interface AuthState {
   shopId: string | null;
   shopOwnerId: string | null;
   setup: (shopName: string, pin: string, shopId: string, shopOwnerId: string) => void;
+  loadShopContext: (shopDetails: { shopId: string; shopName: string; shopOwnerId: string }) => void;
   login: () => void;
   logout: () => void;
   reset: () => void;
@@ -42,6 +43,13 @@ export const useAuthStore = create<AuthState>()(
           shopId,
           shopOwnerId,
         });
+      },
+      loadShopContext: (shopDetails) => {
+        set({
+            shopId: shopDetails.shopId,
+            shopName: shopDetails.shopName,
+            shopOwnerId: shopDetails.shopOwnerId,
+        })
       },
       login: () => set({ isLoggedIn: true }),
       logout: () => set({ isLoggedIn: false }),
