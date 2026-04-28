@@ -2,51 +2,51 @@
   "placeholderImages": [
     {
       "id": "prod_001",
-      "description": "A pair of modern running shoes.",
-      "imageUrl": "https://picsum.photos/seed/shoes/400/400",
-      "imageHint": "running shoes"
+      "description": "A bag of crisp, red apples.",
+      "imageUrl": "https://picsum.photos/seed/apples/400/400",
+      "imageHint": "fresh apples"
     },
     {
       "id": "prod_002",
-      "description": "A sleek and smart watch.",
-      "imageUrl": "https://picsum.photos/seed/watch/400/400",
-      "imageHint": "smart watch"
+      "description": "A bunch of organic carrots.",
+      "imageUrl": "https://picsum.photos/seed/carrots/400/400",
+      "imageHint": "organic carrots"
     },
     {
       "id": "prod_003",
-      "description": "A ceramic coffee mug.",
-      "imageUrl": "https://picsum.photos/seed/mug/400/400",
-      "imageHint": "coffee mug"
+      "description": "A loaf of freshly baked artisan bread.",
+      "imageUrl": "https://picsum.photos/seed/bread/400/400",
+      "imageHint": "artisan bread"
     },
     {
       "id": "prod_004",
-      "description": "A wireless headphone set.",
-      "imageUrl": "https://picsum.photos/seed/headphones/400/400",
-      "imageHint": "wireless headphones"
+      "description": "A carton of fresh milk.",
+      "imageUrl": "https://picsum.photos/seed/milk/400/400",
+      "imageHint": "carton milk"
     },
     {
       "id": "prod_005",
-      "description": "A stylish leather backpack.",
-      "imageUrl": "https://picsum.photos/seed/backpack/400/400",
-      "imageHint": "stylish backpack"
+      "description": "A block of sharp cheddar cheese.",
+      "imageUrl": "https://picsum.photos/seed/cheese/400/400",
+      "imageHint": "block cheese"
     },
     {
       "id": "prod_006",
-      "description": "A modern office chair.",
-      "imageUrl": "https://picsum.photos/seed/chair/400/400",
-      "imageHint": "office chair"
+      "description": "Vine-ripened red tomatoes.",
+      "imageUrl": "https://picsum.photos/seed/tomatoes/400/400",
+      "imageHint": "fresh tomatoes"
     },
     {
       "id": "prod_007",
-      "description": "A professional camera lens.",
-      "imageUrl": "https://picsum.photos/seed/lens/400/400",
-      "imageHint": "camera lens"
+      "description": "A bundle of fresh leafy spinach.",
+      "imageUrl": "https://picsum.photos/seed/spinach/400/400",
+      "imageHint": "leafy spinach"
     },
     {
       "id": "prod_008",
-      "description": "A minimalist desk lamp.",
-      "imageUrl": "https://picsum.photos/seed/lamp/400/400",
-      "imageHint": "desk lamp"
+      "description": "A box of spaghetti pasta.",
+      "imageUrl": "https://picsum.photos/seed/pasta/400/400",
+      "imageHint": "pasta box"
     }
   ]
 }

@@ -45,7 +45,7 @@ export default function CustomerProductCard({ product }: CustomerProductCardProp
       transition={{ type: "spring", stiffness: 300 }}
       className="h-full"
     >
-      <Card className="overflow-hidden rounded-2xl h-full flex flex-col border-white/10 bg-card/50 shadow-lg backdrop-blur-lg">
+      <Card className="overflow-hidden rounded-2xl h-full flex flex-col border bg-card shadow-md">
         <CardContent className="p-0 flex flex-col flex-grow">
           <div className="relative">
             <Image

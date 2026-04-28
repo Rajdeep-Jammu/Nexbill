@@ -13,7 +13,7 @@ type ProductCardProps = {
 };
 
 const getStockStatus = (quantity: number, threshold: number = 20) => {
-  if (quantity > threshold) return "bg-accent";
+  if (quantity > threshold) return "bg-green-500";
   if (quantity > 0) return "bg-yellow-500";
   return "bg-destructive";
 };
@@ -25,7 +25,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       transition={{ type: "spring", stiffness: 300 }}
       className="h-full"
     >
-      <Card className="overflow-hidden rounded-2xl h-full flex flex-col border-white/10 bg-card/50 shadow-lg backdrop-blur-lg">
+      <Card className="overflow-hidden rounded-2xl h-full flex flex-col border bg-card shadow-md">
         <CardContent className="p-0 flex flex-col flex-grow">
           <div className="relative">
             <Image

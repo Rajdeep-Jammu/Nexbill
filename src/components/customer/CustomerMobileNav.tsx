@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ShoppingBag,
   ShoppingCart,
   User,
   LogIn,
   Shield,
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useBillingStore } from '@/hooks/use-billing-store';
-import { Badge } from '@/components/ui/badge';
-import { useUser } from '@/firebase';
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { useBillingStore } from "@/hooks/use-billing-store";
+import { Badge } from "@/components/ui/badge";
+import { useUser } from "@/firebase";
 
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 export default function CustomerMobileNav() {
   const pathname = usePathname();
@@ -23,17 +23,17 @@ export default function CustomerMobileNav() {
   const cartItemCount = totalItems();
 
   const navItems = [
-    { href: '/', icon: ShoppingBag, label: 'Products' },
-    { href: '/cart', icon: ShoppingCart, label: 'Cart', count: cartItemCount },
+    { href: "/", icon: ShoppingBag, label: "Products" },
+    { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount },
     {
-      href: user ? '/profile' : '/login',
+      href: user ? "/profile" : "/login",
       icon: user ? User : LogIn,
-      label: user ? 'Profile' : 'Login',
+      label: user ? "Profile" : "Login",
     },
   ];
 
   if (isAdmin) {
-    navItems.push({ href: '/admin/login', icon: Shield, label: 'Admin' });
+    navItems.push({ href: "/admin/login", icon: Shield, label: "Admin" });
   }
 
   if (isUserLoading) return null;
@@ -42,11 +42,11 @@ export default function CustomerMobileNav() {
     <motion.div
       initial={{ y: 100 }}
       animate={{ y: 0 }}
-      transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-      className="fixed bottom-4 left-4 right-4 h-16 bg-card/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 lg:hidden"
+      transition={{ type: "spring", stiffness: 200, damping: 20 }}
+      className="fixed bottom-4 left-4 right-4 h-16 bg-card border rounded-2xl shadow-lg z-50 lg:hidden"
     >
       <nav className="flex h-full items-center justify-around">
-        {navItems.map(item => (
+        {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -55,11 +55,11 @@ export default function CustomerMobileNav() {
             <motion.div whileTap={{ scale: 0.9 }}>
               <item.icon
                 className={cn(
-                  'h-6 w-6 transition-colors',
-                  (pathname.startsWith(item.href) && item.href !== '/') ||
+                  "h-6 w-6 transition-colors",
+                  (pathname.startsWith(item.href) && item.href !== "/") ||
                     pathname === item.href
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
+                    ? "text-primary"
+                    : "text-muted-foreground"
                 )}
               />
               {item.count && item.count > 0 && (
@@ -71,7 +71,7 @@ export default function CustomerMobileNav() {
                 </Badge>
               )}
             </motion.div>
-            {((pathname.startsWith(item.href) && item.href !== '/') ||
+            {((pathname.startsWith(item.href) && item.href !== "/") ||
               pathname === item.href) && (
               <motion.div
                 layoutId="customer-active-indicator"
