@@ -8,15 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAuthStore } from "@/hooks/use-auth-store";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { useMemo } from "react";
-import { collection, query, where } from "firebase/firestore";
+import { collection, query } from "firebase/firestore";
 import type { Product } from "@/lib/types";
 
 export default function DashboardPage() {
   const shopId = useAuthStore((state) => state.shopId);
   const firestore = useFirestore();
-  const { user } = useUser();
 
   const productsQuery = useMemoFirebase(() => {
     if (!shopId) return null;
@@ -25,9 +24,9 @@ export default function DashboardPage() {
   const { data: products } = useCollection<Product>(productsQuery);
 
   const billsQuery = useMemoFirebase(() => {
-    if (!shopId || !user) return null;
-    return query(collection(firestore, 'shops', shopId, 'bills'), where('shopOwnerId', '==', user.uid));
-  }, [firestore, shopId, user]);
+    if (!shopId) return null;
+    return query(collection(firestore, 'shops', shopId, 'bills'));
+  }, [firestore, shopId]);
   const { data: bills } = useCollection<any>(billsQuery);
 
   const stats = useMemo(() => {

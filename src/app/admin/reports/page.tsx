@@ -2,8 +2,8 @@
 
 import PageHeader from "@/components/PageHeader";
 import { useAuthStore } from "@/hooks/use-auth-store";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query } from "firebase/firestore";
 import type { Bill } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import SalesChart from "@/components/dashboard/SalesChart";
@@ -13,13 +13,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function ReportsPage() {
     const shopId = useAuthStore((state) => state.shopId);
     const firestore = useFirestore();
-    const { user } = useUser();
 
     const billsQuery = useMemoFirebase(() => {
-        if (!shopId || !user) return null;
-        // This is the crucial fix: adding the where clause to satisfy security rules
-        return query(collection(firestore, 'shops', shopId, 'bills'), where('shopOwnerId', '==', user.uid));
-    }, [firestore, shopId, user]);
+        if (!shopId) return null;
+        return query(collection(firestore, 'shops', shopId, 'bills'));
+    }, [firestore, shopId]);
 
     const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
 

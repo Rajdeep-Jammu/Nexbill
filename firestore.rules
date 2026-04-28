@@ -17,7 +17,7 @@
  * - Default Deny: All operations are denied by default. Access is granted explicitly.
  * - No Global Listing: Listing all shops in the root collection is disallowed to protect tenant privacy.
  * - Owner-Centric Writes: All write operations (create, update, delete) on shop-related data
- *   are restricted to the designated shop owner.
+ *   are restricted to the designated shop owner or an application admin.
  * - Customer Read-Only Access: Authenticated customers are granted read-only (`get`, `list`) access
  *   to their own bills and bill items, but they cannot list all bills in a shop.
  *
@@ -68,8 +68,7 @@ service cloud.firestore {
 
     /**
      * Checks if the authenticated user is the owner of the specified shop.
-     * This requires a 'get' call to the parent shop document and should be used
-     * to authorize collection-level 'list' operations.
+     * This requires a 'get' call to the parent shop document.
      */
     function isShopOwner(shopId) {
       let shopDoc = get(/databases/$(database)/documents/shops/$(shopId));
@@ -85,6 +84,14 @@ service cloud.firestore {
     }
     
     /**
+     * Checks if the user is the original shop owner OR an application admin.
+     * This is the primary function for authorizing management actions.
+     */
+    function canManageShop(shopId) {
+      return isShopOwner(shopId) || isAppAdmin();
+    }
+    
+    /**
      * Checks if the owner of the public-facing shop is the currently
      * authenticated user. This grants initial admin privileges.
      */
@@ -92,23 +99,13 @@ service cloud.firestore {
       let activeShopId = get(/databases/$(database)/documents/public/config).data.activeShopId;
       return isShopOwner(activeShopId);
     }
-
-
-    /**
-     * Checks if the user is the owner based on the 'shopOwnerId' field
-     * denormalized onto the document itself. This is the primary check
-     * for document-level reads and writes.
-     */
-    function isDocumentOwner(docData) {
-      return isAuthOwner(docData.shopOwnerId);
-    }
     
     /**
      * Checks if the user is the customer associated with a bill or bill item,
      * based on the denormalized 'customerAuthUid' field.
      */
     function isDocumentCustomer(docData) {
-      return isAuthOwner(docData.customerAuthUid);
+      return isSignedIn() && docData.customerAuthUid != null && request.auth.uid == docData.customerAuthUid;
     }
 
     // --------------------------------
@@ -119,11 +116,11 @@ service cloud.firestore {
      * @description Public configuration data, readable by anyone.
      * @path /public/{docId}
      * @allow (get) Anyone can read public config (like activeShopId).
-     * @allow (write) Only the shop owner can update the config.
+     * @allow (write) Only shop managers can update the config.
      */
     match /public/{docId} {
         allow get: if true;
-        allow write: if isShopOwner(request.resource.data.activeShopId);
+        allow write: if canManageShop(request.resource.data.activeShopId);
     }
     
     /**
@@ -141,77 +138,68 @@ service cloud.firestore {
     /**
      * @description Controls access to a Shop document, the root for all tenant data.
      * @path /shops/{shopId}
-     * @allow (get) Any authenticated user can read a shop's top-level details. This is required to allow the isShopOwner helper function to work correctly.
+     * @allow (get) Any authenticated user can read a shop's top-level details.
      * @allow (create) An authenticated user can create a new shop document for themselves.
-     * @deny (list) No user, authenticated or not, can list all shops in the database.
-     * @deny (update) A user cannot update a shop they do not own.
+     * @deny (list) No user can list all shops in the database.
+     * @allow (update, delete) Only shop managers can modify or delete a shop.
      * @principle Enforces strict document ownership and prevents cross-tenant data visibility.
      */
     match /shops/{shopId} {
       allow get: if isSignedIn();
       allow list: if false; // Disallow listing all shops
       allow create: if isSignedIn() && isAuthOwner(request.resource.data.shopOwnerId) && request.resource.data.id == shopId;
-      allow update: if documentExists() && isShopOwner(shopId) && request.resource.data.shopOwnerId == resource.data.shopOwnerId;
-      allow delete: if documentExists() && isShopOwner(shopId);
+      allow update: if documentExists() && canManageShop(shopId) && request.resource.data.shopOwnerId == resource.data.shopOwnerId;
+      allow delete: if documentExists() && canManageShop(shopId);
     }
 
     /**
      * @description Manages products within a specific shop.
      * @path /shops/{shopId}/products/{productId}
      * @allow (get, list) Anyone can view the products of a shop.
-     * @allow (write) Only the shop owner can manage products.
-     * @principle Public read access for inventory, owner-only writes.
+     * @allow (write) Only shop managers can manage products.
+     * @principle Public read access for inventory, manager-only writes.
      */
     match /shops/{shopId}/products/{productId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isShopOwner(shopId) && isAuthOwner(request.resource.data.shopOwnerId);
-      allow update: if documentExists() && isShopOwner(shopId) && isDocumentOwner(resource.data);
-      allow delete: if documentExists() && isShopOwner(shopId) && isDocumentOwner(resource.data);
+      allow create: if canManageShop(shopId);
+      allow update: if documentExists() && canManageShop(shopId);
+      allow delete: if documentExists() && canManageShop(shopId);
     }
 
     /**
      * @description Manages customer records associated with a specific shop.
      * @path /shops/{shopId}/customers/{customerId}
-     * @allow (create, list, get, update, delete) The shop owner can manage their customer records.
-     * @principle Restricts all customer data management to the parent document's owner.
+     * @allow (read, write) Only shop managers can manage customer records.
+     * @principle Restricts all customer data management to shop managers.
      */
     match /shops/{shopId}/customers/{customerId} {
-      allow get: if isShopOwner(shopId);
-      allow list: if isShopOwner(shopId);
-      allow create: if isShopOwner(shopId);
-      allow update: if documentExists() && isShopOwner(shopId);
-      allow delete: if documentExists() && isShopOwner(shopId);
+      allow read, write: if canManageShop(shopId);
     }
 
     /**
-     * @description Controls access to bills (invoices), allowing access for both shop owners and the relevant customer.
+     * @description Controls access to bills (invoices), allowing access for both shop managers and the relevant customer.
      * @path /shops/{shopId}/bills/{billId}
-     * @allow (get) The shop owner OR the authenticated customer associated with the bill can read it.
-     * @allow (list) Shop owner can list all bills. Customers can list THEIR bills via a query.
-     * @allow (create) The shop owner can create new bills.
-     * @principle Implements a hybrid access model: full ownership for the shop owner and read-only access for a specific collaborator (the customer).
+     * @allow (get) A shop manager OR the authenticated customer associated with the bill can read it.
+     * @allow (list) A shop manager can list all bills. A customer can list THEIR bills via a query.
+     * @allow (write) Only shop managers can create, update, or delete bills.
+     * @principle Implements a hybrid access model: full ownership for managers and read-only for a specific collaborator (the customer).
      */
     match /shops/{shopId}/bills/{billId} {
-      allow get: if isShopOwner(shopId) || isDocumentCustomer(resource.data);
-      allow list: if isShopOwner(shopId) || (isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'customerAuthUid' && request.query.where[0][2] == request.auth.uid);
-      allow create: if isShopOwner(shopId);
-      allow update: if documentExists() && isShopOwner(shopId);
-      allow delete: if documentExists() && isShopOwner(shopId);
+      allow get: if canManageShop(shopId) || isDocumentCustomer(resource.data);
+      allow list: if canManageShop(shopId) || (isSignedIn() && request.query.where.size() > 0 && request.query.where[0][0] == 'customerAuthUid' && request.query.where[0][2] == request.auth.uid);
+      allow create, update, delete: if canManageShop(shopId);
 
       /**
        * @description Controls access to the line items of a bill.
        * @path /shops/{shopId}/bills/{billId}/billItems/{billItemId}
-       * @allow (get, list) The shop owner OR the associated customer can view the bill's line items.
-       * @allow (create) The shop owner can add items to their own bill.
+       * @allow (get, list) A shop manager OR the associated customer can view the bill's line items.
+       * @allow (write) Only shop managers can add/modify/remove items from a bill.
        * @principle Inherits the hybrid access model from the parent bill, secured by denormalized IDs.
        */
       match /billItems/{billItemId} {
-        allow get: if isShopOwner(shopId) || isDocumentCustomer(get(/databases/$(database)/documents/shops/$(shopId)/bills/$(billId)).data);
-        allow list: if isShopOwner(shopId) || isDocumentCustomer(get(/databases/$(database)/documents/shops/$(shopId)/bills/$(billId)).data);
-        allow create: if isShopOwner(shopId);
-        allow update: if documentExists() && isShopOwner(shopId);
-        allow delete: if documentExists() && isShopOwner(shopId);
+        allow get, list: if canManageShop(shopId) || isDocumentCustomer(get(/databases/$(database)/documents/shops/$(shopId)/bills/$(billId)).data);
+        allow write: if canManageShop(shopId);
       }
     }
     
