@@ -54,9 +54,26 @@ export default function LoginPage() {
   };
   
   const handleBiometric = () => {
-    if (storedPin) {
-      setPin(storedPin);
-    }
+    setIsLoggingIn(true);
+    // This is a simulation of a biometric prompt.
+    // In a real app, you would use the WebAuthn API.
+    setTimeout(() => {
+        if (storedPin) {
+            login();
+            toast({
+                title: "Biometric Login Successful",
+                description: `Welcome back, ${shopName}!`,
+            });
+            router.replace("/admin/dashboard");
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Biometric Setup Error",
+                description: "No PIN is stored. Please set up PIN login first.",
+            });
+        }
+        setIsLoggingIn(false);
+    }, 700); // Simulate the time it takes for a biometric prompt
   }
 
   // Show a loader while the component is mounting and store is hydrating
@@ -101,9 +118,14 @@ export default function LoginPage() {
               size="lg"
               className="w-full gap-2 text-base font-bold"
               onClick={handleBiometric}
+              disabled={isLoggingIn}
             >
-              <Fingerprint className="h-5 w-5 text-primary" />
-              Use Biometric
+              {isLoggingIn ? <Loader2 className="animate-spin" /> : (
+                <>
+                  <Fingerprint className="h-5 w-5 text-primary" />
+                  Use Biometric
+                </>
+              )}
             </Button>
           )}
         </div>
