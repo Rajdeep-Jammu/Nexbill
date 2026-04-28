@@ -19,11 +19,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, KeyRound, QrCode, Wallet } from "lucide-react";
+import { LogOut, KeyRound, QrCode, Wallet, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ChangePinDialog } from "@/components/settings/ChangePinDialog";
+import ImageInput from "@/components/inventory/ImageInput";
+import { getCloudinarySignatureAction } from "@/lib/actions/cloudinary";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -32,7 +34,9 @@ export default function SettingsPage() {
   const { clearCart } = useBillingStore();
   
   const [localUpiId, setLocalUpiId] = useState(upiId || "");
-  const [localQrCodeUrl, setLocalQrCodeUrl] = useState(qrCodeUrl || "");
+  const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
+
 
   const handleLogout = () => {
     logout();
@@ -49,12 +53,55 @@ export default function SettingsPage() {
     router.replace("/admin/setup");
   };
 
-  const handlePaymentDetailsSave = () => {
-    setPaymentDetails({ upiId: localUpiId, qrCodeUrl: localQrCodeUrl });
-    toast({
-      title: "Payment Details Saved",
-      description: "Your UPI and QR code information has been updated.",
-    });
+  const handlePaymentDetailsSave = async () => {
+    setIsSavingPayment(true);
+    let finalQrCodeUrl = qrCodeUrl; 
+
+    try {
+        if (qrCodeFile) {
+            const { timestamp, signature, error } = await getCloudinarySignatureAction('qrcodes');
+            if (error) throw new Error(error);
+
+            const formData = new FormData();
+            formData.append('file', qrCodeFile);
+            formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
+            formData.append('signature', signature);
+            formData.append('timestamp', timestamp.toString());
+            formData.append('folder', 'qrcodes');
+
+            const endpoint = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!}/image/upload`;
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                finalQrCodeUrl = data.secure_url;
+            } else {
+                 const errorData = await response.json();
+                 throw new Error(`Cloudinary upload failed: ${errorData.error.message}`);
+            }
+        }
+        
+        setPaymentDetails({ upiId: localUpiId, qrCodeUrl: finalQrCodeUrl || "" });
+        
+        toast({
+          title: "Payment Details Saved",
+          description: "Your payment information has been updated.",
+        });
+
+    } catch (e: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error Saving Details',
+            description: e.message || "Could not save payment details.",
+        });
+    } finally {
+        setIsSavingPayment(false);
+        setQrCodeFile(null);
+    }
   };
 
   return (
@@ -110,11 +157,13 @@ export default function SettingsPage() {
                     <Label htmlFor="upiId" className="flex items-center"><Wallet className="mr-2 h-4 w-4" />UPI ID</Label>
                     <Input id="upiId" placeholder="your-name@upi" value={localUpiId} onChange={(e) => setLocalUpiId(e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="qrCodeUrl" className="flex items-center"><QrCode className="mr-2 h-4 w-4" />QR Code Image URL</Label>
-                    <Input id="qrCodeUrl" placeholder="https://your-image-url.com/qr.png" value={localQrCodeUrl} onChange={(e) => setLocalQrCodeUrl(e.target.value)} />
+                 <div className="space-y-2">
+                    <Label className="flex items-center"><QrCode className="mr-2 h-4 w-4" />QR Code Image</Label>
+                    <ImageInput onChange={setQrCodeFile} initialImageUrl={qrCodeUrl} />
                 </div>
-                <Button onClick={handlePaymentDetailsSave}>Save Payment Details</Button>
+                <Button onClick={handlePaymentDetailsSave} disabled={isSavingPayment}>
+                    {isSavingPayment ? <Loader2 className="animate-spin" /> : 'Save Payment Details'}
+                </Button>
             </CardContent>
         </Card>
 

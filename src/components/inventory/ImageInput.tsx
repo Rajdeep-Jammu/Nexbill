@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Camera, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 
@@ -9,12 +9,21 @@ import CameraCapture from './CameraCapture';
 
 interface ImageInputProps {
   onChange: (file: File | null) => void;
+  initialImageUrl?: string | null;
 }
 
-export default function ImageInput({ onChange }: ImageInputProps) {
-  const [preview, setPreview] = useState<string | null>(null);
+export default function ImageInput({ onChange, initialImageUrl }: ImageInputProps) {
+  const [preview, setPreview] = useState<string | null>(initialImageUrl || null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // This allows the preview to update if the initialImageUrl prop changes
+    // (e.g., after a successful save in the settings page)
+    if (!preview?.startsWith('data:')) { // Don't override a new local preview
+        setPreview(initialImageUrl || null);
+    }
+  }, [initialImageUrl, preview]);
 
   const dataURLtoFile = (dataurl: string, filename: string): File => {
     const arr = dataurl.split(',');
@@ -58,7 +67,7 @@ export default function ImageInput({ onChange }: ImageInputProps) {
     <div className="space-y-4">
       <div className="relative w-full aspect-square max-w-sm mx-auto border-2 border-dashed border-border rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden">
         {preview ? (
-          <Image src={preview} alt="Product preview" layout="fill" objectFit="cover" />
+          <Image src={preview} alt="Image preview" layout="fill" objectFit="contain" />
         ) : (
           <div className="text-center text-muted-foreground">
             <ImageIcon className="mx-auto h-12 w-12" />
