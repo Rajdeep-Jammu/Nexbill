@@ -45,26 +45,26 @@ export default function DashboardPage() {
         title: "Today's Sales",
         value: `₹${todaysRevenue.toLocaleString()}`,
         change: `${todaysSales.length} bills`,
-        icon: <DollarSign className="h-5 w-5 text-primary" />,
+        icon: <DollarSign className="h-5 w-5" />,
       },
       {
         title: "Total Products",
         value: totalProducts,
         change: ``,
-        icon: <Package className="h-5 w-5 text-primary" />,
+        icon: <Package className="h-5 w-5" />,
       },
       {
         title: "Inventory Value",
         value: `₹${inventoryValue.toLocaleString()}`,
         change: "",
-        icon: <ShoppingCart className="h-5 w-5 text-primary" />,
+        icon: <ShoppingCart className="h-5 w-5" />,
       },
       {
         title: "Low Stock",
         value: `${lowStockItems} items`,
         change: products?.filter(p => p.quantity === 0).length + " out of stock",
         isWarning: lowStockItems > 0,
-        icon: <TrendingUp className="h-5 w-5 text-destructive" />,
+        icon: <TrendingUp className="h-5 w-5" />,
       },
     ];
   }, [products, bills]);

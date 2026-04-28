@@ -25,26 +25,26 @@ export default function StatCard({
         transition={{ type: 'spring', stiffness: 300 }}
         className="w-full"
     >
-      <Card className="rounded-2xl border-white/10 bg-card/50 shadow-xl backdrop-blur-lg h-full">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            {title}
-          </CardTitle>
-          {icon}
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="text-2xl font-bold text-foreground">{value}</div>
-          {change && (
-            <p
-              className={cn(
-                "text-xs mt-1",
-                isWarning ? "text-destructive" : "text-muted-foreground"
-              )}
-            >
-              {change}
-            </p>
-          )}
-        </CardContent>
+      <Card className={cn(
+          "rounded-2xl shadow-lg h-full text-white",
+          isWarning ? "bg-gradient-to-br from-amber-500 to-destructive" : "bg-gradient-to-br from-primary/80 to-primary"
+      )}>
+        <div className="p-4">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 className="text-sm font-medium text-white/90">
+              {title}
+            </h3>
+            <div className="text-white/90">{icon}</div>
+          </div>
+          <div className="pt-0">
+            <div className="text-2xl font-bold">{value}</div>
+            {change && (
+              <p className="text-xs mt-1 text-white/80">
+                {change}
+              </p>
+            )}
+          </div>
+        </div>
       </Card>
     </motion.div>
   );

@@ -35,7 +35,7 @@ const BillingProductCard = ({ product }: { product: Product }) => {
   return (
     <motion.div whileHover={{ y: -3, scale: 1.01 }}>
       <Card
-        className="overflow-hidden cursor-pointer transition-all hover:shadow-primary/20 bg-card/50 backdrop-blur-lg border-white/10 rounded-xl"
+        className="overflow-hidden cursor-pointer transition-all hover:shadow-primary/20 rounded-xl"
         onClick={handleAddToCart}
       >
         <CardContent className="p-2">

@@ -47,7 +47,7 @@ export default function ReportsPage() {
         <div>
             <PageHeader title="Reports" />
             <div className="space-y-8">
-                <Card className="bg-card/50 backdrop-blur-lg border-white/10">
+                <Card>
                     <CardHeader>
                         <CardTitle className="font-headline text-xl sm:text-2xl">
                         Weekly Sales

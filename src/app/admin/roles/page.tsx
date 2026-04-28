@@ -13,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Admin = {
+  id: string;
   uid: string;
   role: 'ADMIN';
   email?: string;
@@ -80,7 +81,7 @@ export default function RolesPage() {
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Card className="bg-card/50 backdrop-blur-lg border-white/10">
+          <Card>
             <CardHeader>
               <CardTitle>Current Admins</CardTitle>
               <CardDescription>
@@ -97,7 +98,7 @@ export default function RolesPage() {
               ) : (
                 <ul className="space-y-2">
                   {admins?.map(admin => (
-                    <li key={admin.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                    <li key={admin.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
                       <div>
                         <p className="font-semibold">{admin.email || 'No Email Provided'}</p>
                         <p className="font-mono text-xs text-muted-foreground">{admin.uid}</p>
@@ -112,7 +113,7 @@ export default function RolesPage() {
         </div>
 
         <div>
-          <Card className="bg-card/50 backdrop-blur-lg border-white/10">
+          <Card>
             <CardHeader>
               <CardTitle>Grant Admin Role</CardTitle>
               <CardDescription>Enter a user's UID to make them an admin.</CardDescription>
