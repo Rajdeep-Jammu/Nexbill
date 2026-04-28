@@ -10,14 +10,24 @@ interface AuthState {
   qrCodeUrl: string | null;
   shopId: string | null;
   shopOwnerId: string | null;
-  setup: (shopName: string, pin: string, shopId: string, shopOwnerId: string) => void;
-  loadShopContext: (shopDetails: { shopId: string; shopName: string; shopOwnerId: string }) => void;
+  setup: (
+    shopName: string,
+    pin: string,
+    shopId: string,
+    shopOwnerId: string
+  ) => void;
+  loadShopContext: (shopDetails: {
+    shopId: string;
+    shopName: string;
+    shopOwnerId: string;
+  }) => void;
   login: () => void;
   logout: () => void;
   reset: () => void;
   toggleBiometric: () => void;
   changePin: (oldPin: string, newPin: string) => boolean;
   setPaymentDetails: (details: { upiId: string; qrCodeUrl: string }) => void;
+  setShopName: (shopName: string) => void;
 }
 
 const initialState = {
@@ -44,12 +54,12 @@ export const useAuthStore = create<AuthState>()(
           shopOwnerId,
         });
       },
-      loadShopContext: (shopDetails) => {
+      loadShopContext: shopDetails => {
         set({
-            shopId: shopDetails.shopId,
-            shopName: shopDetails.shopName,
-            shopOwnerId: shopDetails.shopOwnerId,
-        })
+          shopId: shopDetails.shopId,
+          shopName: shopDetails.shopName,
+          shopOwnerId: shopDetails.shopOwnerId,
+        });
       },
       login: () => set({ isLoggedIn: true }),
       logout: () => set({ isLoggedIn: false }),
@@ -57,7 +67,8 @@ export const useAuthStore = create<AuthState>()(
         // Also clear firebase auth? For now, just clears local state.
         set(initialState);
       },
-      toggleBiometric: () => set(state => ({ biometricEnabled: !state.biometricEnabled })),
+      toggleBiometric: () =>
+        set(state => ({ biometricEnabled: !state.biometricEnabled })),
       changePin: (oldPin: string, newPin: string) => {
         if (get().pin === oldPin) {
           set({ pin: newPin });
@@ -65,7 +76,9 @@ export const useAuthStore = create<AuthState>()(
         }
         return false;
       },
-      setPaymentDetails: details => set({ upiId: details.upiId, qrCodeUrl: details.qrCodeUrl }),
+      setPaymentDetails: details =>
+        set({ upiId: details.upiId, qrCodeUrl: details.qrCodeUrl }),
+      setShopName: shopName => set({ shopName }),
     }),
     {
       name: 'auth-storage',
