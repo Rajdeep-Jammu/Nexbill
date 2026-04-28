@@ -57,6 +57,16 @@ export default function SettingsPage() {
     setIsSavingPayment(true);
     let finalQrCodeUrl = qrCodeUrl; 
 
+    if (qrCodeFile && (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || !process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY)) {
+        toast({
+            variant: 'destructive',
+            title: 'Cloudinary Not Configured',
+            description: 'Please make sure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_API_KEY are set in your .env file to upload a new QR code.'
+        });
+        setIsSavingPayment(false);
+        return;
+    }
+
     try {
         if (qrCodeFile) {
             const { timestamp, signature, error } = await getCloudinarySignatureAction('qrcodes');
@@ -64,12 +74,12 @@ export default function SettingsPage() {
 
             const formData = new FormData();
             formData.append('file', qrCodeFile);
-            formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
+            formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY);
             formData.append('signature', signature);
             formData.append('timestamp', timestamp.toString());
             formData.append('folder', 'qrcodes');
 
-            const endpoint = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!}/image/upload`;
+            const endpoint = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`;
             
             const response = await fetch(endpoint, {
                 method: 'POST',

@@ -88,6 +88,16 @@ export default function BillGeneratedDialog({ billData, onClose, title }: BillGe
             setUploadError("Printable content not found.");
             return;
         }
+
+        if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || !process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY) {
+            toast({
+                variant: 'destructive',
+                title: 'Cloudinary Not Configured',
+                description: 'Please make sure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_API_KEY are set in your .env file to upload PDFs.'
+            });
+            setIsUploading(false);
+            return;
+        }
     
         try {
             const canvas = await html2canvas(printableContent, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
@@ -106,12 +116,12 @@ export default function BillGeneratedDialog({ billData, onClose, title }: BillGe
     
             const formData = new FormData();
             formData.append('file', pdfBlob, `bill-${Date.now()}.pdf`);
-            formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
+            formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY);
             formData.append('signature', signature);
             formData.append('timestamp', timestamp.toString());
             formData.append('folder', 'bills');
     
-            const endpoint = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!}/raw/upload`;
+            const endpoint = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/raw/upload`;
             
             const response = await fetch(endpoint, {
                 method: 'POST',

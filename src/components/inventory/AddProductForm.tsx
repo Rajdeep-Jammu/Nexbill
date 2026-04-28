@@ -86,6 +86,16 @@ export function AddProductForm({ onFormSuccess }: { onFormSuccess: () => void })
         return;
     }
 
+    if (values.image && values.image instanceof File && (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || !process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY)) {
+        toast({
+            variant: 'destructive',
+            title: 'Cloudinary Not Configured',
+            description: 'Please make sure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_API_KEY are set in your .env file.'
+        });
+        setIsSubmitting(false);
+        return;
+    }
+
     try {
         let imageUrl = 'https://placehold.co/400x400/27272a/a1a1aa?text=No+Image';
         let imageHint = values.imageHint || values.category;
