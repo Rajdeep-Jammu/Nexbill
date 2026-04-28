@@ -83,7 +83,7 @@ export default function ProfilePage() {
             <CardHeader className="flex-row items-center gap-6 space-y-0">
                  <Avatar className="h-20 w-20 border-2 border-primary/50">
                     {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || user.email || 'User'} />}
-                    <AvatarFallback className="text-3xl">{user.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
+                    <AvatarFallback className="text-3xl">{user.displayName ? user.displayName[0].toUpperCase() : (user.email?.[0].toUpperCase() || 'U')}</AvatarFallback>
                 </Avatar>
                 <div>
                     <CardTitle className="text-3xl font-headline">Welcome back, {user.displayName || user.email?.split('@')[0]}!</CardTitle>

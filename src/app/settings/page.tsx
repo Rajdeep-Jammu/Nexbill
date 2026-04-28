@@ -10,8 +10,9 @@ import PageHeader from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut } from 'lucide-react';
+import { Loader2, LogOut, Edit } from 'lucide-react';
 import Link from 'next/link';
+import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -80,12 +81,17 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
                         {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || user.email || 'User'} />}
-                        <AvatarFallback>{user.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
+                        <AvatarFallback>{user.displayName ? user.displayName[0].toUpperCase() : (user.email?.[0].toUpperCase() || 'U')}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                         <p className="font-semibold">{user.displayName || 'No display name'}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>
+                    <EditProfileDialog user={user}>
+                        <Button variant="outline" size="icon">
+                            <Edit className="h-4 w-4"/>
+                        </Button>
+                    </EditProfileDialog>
                 </div>
             </CardContent>
         </Card>
