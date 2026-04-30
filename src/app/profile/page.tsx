@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import { ProfileDropdown } from '@/components/customer/ProfileDropdown';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -79,13 +80,18 @@ export default function ProfilePage() {
     <CustomerLayout>
       <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <PageHeader title="Overview" />
-        <Link href="/shop" className="w-full sm:w-auto">
-          <Button className="w-full sm:w-auto rounded-2xl shadow-xl group gap-2 bg-primary hover:bg-primary/90 glow-primary font-bold">
-            <Zap className="h-4 w-4 fill-white" />
-            Browse Shop
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Link href="/shop" className="flex-1 sm:flex-initial">
+            <Button className="w-full sm:w-auto rounded-2xl shadow-xl group gap-2 bg-primary hover:bg-primary/90 glow-primary font-bold">
+              <Zap className="h-4 w-4 fill-white" />
+              Browse Shop
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
+          <div className="lg:hidden">
+            <ProfileDropdown />
+          </div>
+        </div>
       </div>
 
       <div className="space-y-6 sm:space-y-10">
