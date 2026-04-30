@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -8,7 +7,6 @@ import {
   ShoppingCart,
   LayoutDashboard,
   Settings,
-  Shield,
   LogIn,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -21,7 +19,7 @@ import { cn } from "@/lib/utils";
 export default function CustomerMobileNav() {
   const pathname = usePathname();
   const { totalItems } = useBillingStore();
-  const { user, isUserLoading, isAdmin } = useUser();
+  const { user, isUserLoading } = useUser();
   const cartItemCount = totalItems();
 
   let navItems = [];
@@ -34,12 +32,9 @@ export default function CustomerMobileNav() {
     navItems.push(
       { href: "/profile", icon: LayoutDashboard, label: "Dashboard" },
       { href: "/shop", icon: ShoppingBag, label: "Products" },
-      { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount }
+      { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount },
+      { href: "/settings", icon: Settings, label: "Settings" }
     );
-     if (isAdmin) {
-      navItems.push({ href: "/admin/login", icon: Shield, label: "Admin" });
-    }
-    navItems.push({ href: "/settings", icon: Settings, label: "Settings" });
   } else {
      navItems.push(
       { href: "/shop", icon: ShoppingBag, label: "Products" },

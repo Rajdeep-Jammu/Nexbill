@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -9,7 +8,6 @@ import {
   Settings,
   LogIn,
   UserPlus,
-  Shield,
   LayoutDashboard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +25,7 @@ const navItems = [
 export function CustomerHeader() {
   const pathname = usePathname();
   const { totalItems } = useBillingStore();
-  const { user, isUserLoading, isAdmin } = useUser();
+  const { user, isUserLoading } = useUser();
   const cartItemCount = totalItems();
   
   // The Logo always points to the Root, which redirects based on Auth.
@@ -91,14 +89,6 @@ export function CustomerHeader() {
             <div className='w-20 h-10 animate-pulse bg-muted rounded-md' />
         ) : user ? (
             <>
-              {isAdmin && (
-                <Link href="/admin/login">
-                  <Button variant="outline" size="icon">
-                    <Shield />
-                    <span className="sr-only">Admin Panel</span>
-                  </Button>
-                </Link>
-              )}
               <Link href="/settings">
                 <Button variant="ghost" size="icon">
                   <Settings />
