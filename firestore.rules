@@ -1,16 +1,7 @@
 
-/**
- * Core Philosophy:
- * This ruleset implements a multi-tenant security model centered around Shops.
- * Optimization: Uses denormalized `shopOwnerId` for instant, reliable ownership checks.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --------------------------------
-    // Helper Functions
-    // --------------------------------
 
     function isSignedIn() {
       return request.auth != null;
@@ -24,65 +15,51 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // Rely on denormalized shopOwnerId in the document for performance and reliability
-    function isOwnerOf(docData) {
-      return isSignedIn() && docData.shopOwnerId == request.auth.uid;
-    }
-    
-    function canManage(docData) {
-      return isAppAdmin() || isOwnerOf(docData);
-    }
-    
-    function isDocumentCustomer(docData) {
-      return isSignedIn() && docData.customerAuthUid != null && request.auth.uid == docData.customerAuthUid;
+    function isShopOwner(shopId) {
+      return isSignedIn() && (isAppAdmin() || (exists(/databases/$(database)/documents/shops/$(shopId)) && get(/databases/$(database)/documents/shops/$(shopId)).data.shopOwnerId == request.auth.uid));
     }
 
-    // --------------------------------
-    // Collection Rules
-    // --------------------------------
-    
     match /public/{docId} {
-        allow get: if true;
-        allow write: if isSignedIn() && (isAppAdmin() || isAuthOwner(request.resource.data.shopOwnerId));
+      allow get: if true;
+      allow write: if isAppAdmin();
     }
-    
+
     match /admins/{userId} {
       allow get: if isAuthOwner(userId);
       allow list, write: if isAppAdmin();
     }
 
-    match /shops/{shopId} {
-      // Use resource.data for updates/deletes and request.resource.data for creates
+    match /users/{userId} {
       allow get: if isSignedIn();
-      allow list: if false; 
-      allow create: if isSignedIn() && isAuthOwner(request.resource.data.shopOwnerId);
-      allow update, delete: if canManage(resource.data);
+      allow write: if isAuthOwner(userId);
+    }
+
+    match /sessions/{sessionId} {
+      allow create: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list, delete: if isSignedIn() && (isAppAdmin() || isAuthOwner(resource.data.userId));
+      allow update: if isSignedIn();
+    }
+
+    match /shops/{shopId} {
+      allow get: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isShopOwner(shopId);
 
       match /products/{productId} {
         allow get, list: if true;
-        allow write: if canManage(request.resource.data);
-      }
-
-      match /customers/{customerId} {
-        allow read, write: if canManage(resource.data) || canManage(request.resource.data);
+        allow write: if isShopOwner(shopId);
       }
 
       match /bills/{billId} {
-        allow get: if canManage(resource.data) || isDocumentCustomer(resource.data);
-        allow list: if isSignedIn() && (isAppAdmin() || resource.data.shopOwnerId == request.auth.uid || resource.data.customerAuthUid == request.auth.uid);
-        allow write: if canManage(request.resource.data);
+        allow read: if isSignedIn() && (isShopOwner(shopId) || resource.data.customerAuthUid == request.auth.uid);
+        allow write: if isShopOwner(shopId);
 
         match /billItems/{billItemId} {
-          allow get: if canManage(resource.data) || isDocumentCustomer(resource.data);
-          allow list: if isSignedIn() && (isAppAdmin() || resource.data.shopOwnerId == request.auth.uid || resource.data.customerAuthUid == request.auth.uid);
-          allow write: if canManage(request.resource.data);
+          allow read: if isSignedIn() && (isShopOwner(shopId) || resource.data.customerAuthUid == request.auth.uid);
+          allow write: if isShopOwner(shopId);
         }
       }
-    }
-    
-    match /users/{userId} {
-        allow get: if isSignedIn();
-        allow write: if isAuthOwner(userId);
     }
   }
 }

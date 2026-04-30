@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -7,76 +8,71 @@ import Link from 'next/link';
 import CustomerLayout from '../../customer-layout';
 import PageHeader from "@/components/PageHeader";
 import CheckoutSessionDisplay from '@/components/checkout/CheckoutSessionDisplay';
-import { useSessionsStore, type CheckoutSession } from '@/hooks/use-sessions-store';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function CheckoutPage() {
     const params = useParams();
     const sessionId = params.sessionId as string;
     
-    // Defer accessing store state until client-side hydration
-    const [isLoading, setIsLoading] = useState(true);
-    const [session, setSession] = useState<CheckoutSession | undefined>(undefined);
-    const [paymentDetails, setPaymentDetails] = useState<{qrCodeUrl: string | null, upiId: string | null}>({qrCodeUrl: null, upiId: null});
+    const firestore = useFirestore();
+    const sessionRef = useMemoFirebase(() => doc(firestore, 'sessions', sessionId), [firestore, sessionId]);
+    const { data: session, isLoading, error } = useDoc(sessionRef);
 
-    useEffect(() => {
-        // This code runs only on the client, after the component has mounted.
-        const sessionData = useSessionsStore.getState().getSession(sessionId);
-        const { qrCodeUrl, upiId } = useAuthStore.getState();
-        setSession(sessionData);
-        setPaymentDetails({ qrCodeUrl, upiId });
-        setIsLoading(false);
-    }, [sessionId]);
+    const { qrCodeUrl, upiId } = useAuthStore();
 
     if (isLoading) {
         return (
             <CustomerLayout>
-                {/* Render a consistent header during loading */}
-                <PageHeader title="Checkout" />
-                <div className="flex flex-col items-center gap-8">
-                    <Skeleton className="w-full max-w-sm h-40" />
-                    <Skeleton className="w-full max-w-sm h-80" />
+                <div className="flex flex-col items-center gap-8 py-10">
+                    <Skeleton className="w-full max-w-sm h-40 rounded-[2.5rem]" />
+                    <Skeleton className="w-full max-w-sm h-80 rounded-[2.5rem]" />
                 </div>
             </CustomerLayout>
         );
     }
 
-    if (!session) {
+    if (!session || error) {
         return (
             <CustomerLayout>
-                <PageHeader title="Checkout" />
-                <div className="flex flex-col items-center justify-center text-center h-[50vh]">
-                    <Alert variant="destructive" className="max-w-md">
-                        <Terminal className="h-4 w-4" />
-                        <AlertTitle>Session Not Found</AlertTitle>
-                        <AlertDescription>
-                            The checkout session ID is invalid or has expired. Please try checking out again.
-                        </AlertDescription>
-                    </Alert>
-                    <Link href="/cart">
-                        <Button variant="link" className="mt-4">Go back to Cart</Button>
+                <div className="flex flex-col items-center justify-center text-center h-[70vh] p-4">
+                    <div className="bg-destructive/10 p-6 rounded-full mb-6">
+                        <Terminal className="h-12 w-12 text-destructive" />
+                    </div>
+                    <h2 className="text-3xl font-black mb-2">Session Not Found</h2>
+                    <p className="text-muted-foreground max-w-md font-bold mb-8">
+                        This checkout code is either invalid, expired, or was already processed.
+                    </p>
+                    <Link href="/shop">
+                        <Button className="rounded-2xl px-8 py-6 font-bold gap-2">
+                            <ShoppingBag className="h-5 w-5" />
+                            Back to Shopping
+                        </Button>
                     </Link>
                 </div>
             </CustomerLayout>
         )
     }
 
-    if (!paymentDetails.qrCodeUrl && !paymentDetails.upiId) {
+    if (!qrCodeUrl && !upiId) {
          return (
              <CustomerLayout>
-                <PageHeader title="Checkout" />
-                 <div className="flex flex-col items-center justify-center text-center h-[50vh]">
-                    <Alert className="max-w-md">
-                        <Terminal className="h-4 w-4" />
-                        <AlertTitle>Payment Details Not Configured</AlertTitle>
-                        <AlertDescription>
-                            The shop owner has not configured payment details yet. Please contact them to complete your purchase.
+                 <div className="flex flex-col items-center justify-center text-center h-[70vh] p-4">
+                    <Alert className="max-w-md rounded-[2rem] border-amber-500/20 bg-amber-500/5">
+                        <Terminal className="h-5 w-5 text-amber-500" />
+                        <AlertTitle className="font-black text-amber-500">Payment Unconfigured</AlertTitle>
+                        <AlertDescription className="font-bold">
+                            The shop owner hasn't set up their UPI details yet. Please show your checkout code to the staff.
                         </AlertDescription>
                     </Alert>
+                    <div className="mt-8">
+                        <CheckoutSessionDisplay session={session as any} qrCodeUrl={null} upiId={null} />
+                    </div>
                 </div>
              </CustomerLayout>
          )
@@ -84,8 +80,7 @@ export default function CheckoutPage() {
     
     return (
         <CustomerLayout>
-            <PageHeader title="Complete Your Payment" />
-            <CheckoutSessionDisplay session={session} qrCodeUrl={paymentDetails.qrCodeUrl} upiId={paymentDetails.upiId} />
+            <CheckoutSessionDisplay session={session as any} qrCodeUrl={qrCodeUrl} upiId={upiId} />
         </CustomerLayout>
     )
 }

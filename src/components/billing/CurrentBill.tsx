@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useBillingStore } from '@/hooks/use-billing-store';
@@ -6,20 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
-import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, Loader2 } from 'lucide-react';
 import BillGeneratedDialog from './BillGeneratedDialog';
 import { useState } from 'react';
 import type { CartItem, Bill, BillItem } from '@/lib/types';
-import { useSessionsStore } from '@/hooks/use-sessions-store';
 import { useFirestore } from '@/firebase';
-import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export default function CurrentBill() {
   const { items, updateQuantity, removeFromCart, totalAmount, clearCart, activeSessionId } = useBillingStore();
   const { shopId, shopOwnerId } = useAuthStore();
-  const getSession = useSessionsStore(state => state.getSession);
-  const updateSessionStatus = useSessionsStore(state => state.updateSessionStatus);
   const [billData, setBillData] = useState<{ items: CartItem[]; total: number } | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   
@@ -39,9 +37,6 @@ export default function CurrentBill() {
     setIsCheckingOut(true);
 
     try {
-      const session = activeSessionId ? getSession(activeSessionId) : undefined;
-
-      // Create a batch write
       const batch = writeBatch(firestore);
 
       // 1. Create Bill document
@@ -52,7 +47,7 @@ export default function CurrentBill() {
         shopOwnerId: shopOwnerId,
         invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
         billDate: new Date().toISOString(),
-        subtotal: billData.total, // Assuming total is subtotal for now
+        subtotal: billData.total,
         taxAmount: 0,
         totalAmount: billData.total,
         status: 'paid',
@@ -60,12 +55,10 @@ export default function CurrentBill() {
         updatedAt: serverTimestamp(),
         itemCount: billData.items.reduce((sum, item) => sum + item.cartQuantity, 0),
       };
-       if (session?.userId) {
-        (bill as any).customerAuthUid = session.userId;
-      }
+      
       batch.set(billRef, bill);
 
-      // 2. Create BillItem documents
+      // 2. Create BillItem documents & Update Inventory
       for (const item of billData.items) {
         const billItemRef = doc(collection(firestore, 'shops', shopId, 'bills', billRef.id, 'billItems'));
         const billItem: BillItem = {
@@ -78,37 +71,36 @@ export default function CurrentBill() {
           itemTotal: item.price * item.cartQuantity,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          shopOwnerId: shopOwnerId, // Denormalizing for rules
-          ...(session?.userId && { customerAuthUid: session.userId }),
+          shopOwnerId: shopOwnerId,
         };
         batch.set(billItemRef, billItem);
 
-        // 3. (Optional but good practice) Update product inventory
         const productRef = doc(firestore, 'shops', shopId, 'products', item.id);
         batch.update(productRef, {
             quantity: item.quantity - item.cartQuantity
         });
       }
       
-      // Commit the batch
-      await batch.commit();
-
+      // 3. Mark session as paid or delete it
       if (activeSessionId) {
-        updateSessionStatus(activeSessionId, 'paid');
+        const sessionRef = doc(firestore, 'sessions', activeSessionId);
+        batch.update(sessionRef, { status: 'paid' });
       }
 
+      await batch.commit();
+
       toast({
-        title: "Bill Saved!",
-        description: "The transaction has been recorded."
-      })
+        title: "Bill Processed!",
+        description: "Transaction saved and inventory updated."
+      });
 
     } catch (error: any) {
         console.error("Failed to save bill:", error);
         toast({
             variant: 'destructive',
             title: "Checkout Failed",
-            description: error.message || "Could not save the bill to the database."
-        })
+            description: error.message || "Could not save the bill."
+        });
     } finally {
         setIsCheckingOut(false);
         setBillData(null);
@@ -117,50 +109,52 @@ export default function CurrentBill() {
   };
 
   return (
-    <Card className="sticky top-4">
+    <Card className="sticky top-4 rounded-[2rem] border-primary/20 overflow-hidden shadow-2xl bg-card/50 backdrop-blur-xl">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-headline text-xl">
-          <ShoppingBag className="h-5 w-5" />
-          Current Bill
+        <CardTitle className="flex items-center gap-2 font-black text-xl">
+          <ShoppingBag className="h-5 w-5 text-primary" />
+          Live Bill
         </CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[40vh] sm:h-[calc(80vh-220px)]">
           {items.length === 0 ? (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-muted-foreground">No items in bill yet.</p>
+            <div className="flex h-full flex-col items-center justify-center py-10 opacity-50">
+              <ShoppingBag className="h-10 w-10 mb-2" />
+              <p className="text-sm font-bold">No items loaded.</p>
             </div>
           ) : (
             <div className="space-y-4 pr-4">
               {items.map(item => (
-                <div key={item.id} className="flex items-center gap-4">
-                  <Image
-                    src={item.imageUrl}
-                    alt={item.name}
-                    width={48}
-                    height={48}
-                    className="rounded-md object-cover aspect-square"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold truncate">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                <div key={item.id} className="flex items-center gap-4 bg-secondary/30 p-2 rounded-2xl">
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-primary/10">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black truncate">{item.name}</p>
+                    <p className="text-xs font-bold text-primary">
                       ₹{item.price.toLocaleString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
+                      className="h-8 w-8 rounded-lg bg-background shadow-sm"
                       onClick={() => updateQuantity(item.id, item.cartQuantity - 1)}
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="w-5 text-center text-sm">{item.cartQuantity}</span>
+                    <span className="w-5 text-center text-sm font-black">{item.cartQuantity}</span>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
+                      className="h-8 w-8 rounded-lg bg-background shadow-sm"
                       onClick={() => updateQuantity(item.id, item.cartQuantity + 1)}
                       disabled={item.cartQuantity >= item.quantity}
                     >
@@ -169,7 +163,7 @@ export default function CurrentBill() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg"
                       onClick={() => removeFromCart(item.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -182,13 +176,13 @@ export default function CurrentBill() {
         </ScrollArea>
       </CardContent>
       {items.length > 0 && (
-        <CardFooter className="flex-col items-start gap-4">
-          <div className="w-full flex justify-between font-bold text-lg">
-            <span>Total</span>
-            <span>₹{totalAmount().toLocaleString()}</span>
+        <CardFooter className="flex-col items-start gap-4 border-t pt-6">
+          <div className="w-full flex justify-between items-center">
+            <span className="font-black text-muted-foreground uppercase tracking-widest text-xs">Total Due</span>
+            <span className="font-black text-2xl text-primary">₹{totalAmount().toLocaleString()}</span>
           </div>
-          <Button className="w-full font-bold" size="lg" onClick={handleCheckout} disabled={isCheckingOut}>
-            {isCheckingOut ? <Loader2 className="animate-spin" /> : 'Checkout'}
+          <Button className="w-full font-black text-lg py-8 rounded-2xl shadow-xl shadow-primary/20" size="lg" onClick={handleCheckout} disabled={isCheckingOut}>
+            {isCheckingOut ? <Loader2 className="animate-spin" /> : 'Finalize Sale'}
           </Button>
         </CardFooter>
       )}

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -13,7 +14,6 @@ import { motion } from "framer-motion";
 import { useBillingStore } from "@/hooks/use-billing-store";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 import { cn } from "@/lib/utils";
 
@@ -27,10 +27,10 @@ export default function CustomerMobileNav() {
 
   const navItems = user 
     ? [
-        { href: "/profile", icon: LayoutDashboard, label: "Me" },
+        { href: "/profile", icon: LayoutDashboard, label: "Dashboard" },
         { href: "/shop", icon: ShoppingBag, label: "Shop" },
         { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount },
-        { href: "/settings", icon: Settings, label: "Set" }
+        { href: "/settings", icon: Settings, label: "Settings" }
       ]
     : [
         { href: "/shop", icon: ShoppingBag, label: "Shop" },
