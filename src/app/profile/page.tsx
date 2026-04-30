@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -7,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { doc } from 'firebase/firestore';
 
 import CustomerLayout from '../customer-layout';
-import PageHeader from '@/components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, ShoppingCart, ArrowRight, Zap, Star, ShieldCheck, Crown, Gift } from 'lucide-react';
@@ -83,19 +81,16 @@ export default function ProfilePage() {
 
   return (
     <CustomerLayout>
-      <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-        <PageHeader title="Me" />
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Link href="/shop" className="flex-1 sm:flex-initial">
-            <Button className="w-full sm:w-auto rounded-2xl shadow-xl group gap-2 bg-primary hover:bg-primary/90 glow-primary font-black py-6 px-8">
-              <ShoppingCart className="h-5 w-5" />
-              Shop Now
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </Link>
-          <div className="lg:hidden">
-            <ProfileDropdown />
-          </div>
+      <div className="mb-6 flex flex-row items-center justify-end gap-3">
+        <Link href="/shop" className="flex-1 sm:flex-initial">
+          <Button className="w-full sm:w-auto rounded-2xl shadow-xl group gap-2 bg-primary hover:bg-primary/90 glow-primary font-black py-6 px-8">
+            <ShoppingCart className="h-5 w-5" />
+            Shop Now
+            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+          </Button>
+        </Link>
+        <div className="lg:hidden">
+          <ProfileDropdown />
         </div>
       </div>
 
