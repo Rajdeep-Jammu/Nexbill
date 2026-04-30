@@ -23,8 +23,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
 
-  const configRef = useMemoFirebase(() => doc(firestore, 'public', 'config'), [firestore]);
-  const { data: config } = useDoc(configRef);
+  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userDocRef);
 
   useEffect(() => {
     setIsClient(true);
@@ -36,7 +36,7 @@ export default function ProfilePage() {
     }
   }, [isClient, isUserLoading, user, router]);
 
-  if (!isClient || isUserLoading || !user) {
+  if (!isClient || isUserLoading || isProfileLoading || !user) {
     return (
       <CustomerLayout>
         <div className="flex h-[60vh] w-full items-center justify-center">
@@ -49,7 +49,7 @@ export default function ProfilePage() {
   const statCards = [
     {
       title: "Member Status",
-      value: "Verified",
+      value: userProfile?.isVerified ? "Verified" : "Standard",
       icon: <ShieldCheck className="h-6 w-6" />,
       color: "bg-emerald-500",
       textColor: "text-emerald-500",
@@ -57,7 +57,7 @@ export default function ProfilePage() {
     },
     {
       title: "NexPoint Balance",
-      value: "1,250",
+      value: (userProfile?.points || 0).toLocaleString(),
       icon: <Star className="h-6 w-6" />,
       color: "bg-amber-500",
       textColor: "text-amber-500",
@@ -65,7 +65,7 @@ export default function ProfilePage() {
     },
     {
       title: "Account Tier",
-      value: "Premium",
+      value: userProfile?.tier || "Classic",
       icon: <Crown className="h-6 w-6" />,
       color: "bg-indigo-500",
       textColor: "text-indigo-500",
@@ -73,7 +73,7 @@ export default function ProfilePage() {
     },
     {
       title: "Special Rewards",
-      value: "3 Active",
+      value: "Coming Soon",
       icon: <Gift className="h-6 w-6" />,
       color: "bg-rose-500",
       textColor: "text-rose-500",
@@ -118,7 +118,9 @@ export default function ProfilePage() {
                         <p className="text-white/80 font-bold text-base sm:text-2xl">{user.email}</p>
                         <div className="pt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
                             <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-md px-4 py-1.5 font-bold rounded-full">Member Since 2024</Badge>
-                            <Badge className="bg-emerald-400 text-emerald-950 border-none px-4 py-1.5 font-black rounded-full shadow-lg">PREMIUM STATUS</Badge>
+                            {userProfile?.tier === 'Premium' && (
+                                <Badge className="bg-emerald-400 text-emerald-950 border-none px-4 py-1.5 font-black rounded-full shadow-lg">PREMIUM STATUS</Badge>
+                            )}
                         </div>
                     </div>
                 </CardContent>
