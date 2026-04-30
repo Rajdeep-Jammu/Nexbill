@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -20,7 +21,7 @@ import { useUser } from '@/firebase';
 
 const navItems = [
   { href: '/profile', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/', label: 'Products', icon: ShoppingBag },
+  { href: '/shop', label: 'Products', icon: ShoppingBag },
 ];
 
 export function CustomerHeader() {
@@ -28,7 +29,9 @@ export function CustomerHeader() {
   const { totalItems } = useBillingStore();
   const { user, isUserLoading, isAdmin } = useUser();
   const cartItemCount = totalItems();
-  const homeHref = user ? '/profile' : '/';
+  
+  // The Logo always points to the Root, which redirects based on Auth.
+  const homeHref = '/';
 
   return (
     <header className="hidden lg:flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur-lg z-40">
@@ -44,7 +47,7 @@ export function CustomerHeader() {
               href={item.href}
               className={cn(
                 'flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary',
-                 (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href))
+                 pathname === item.href
                   ? 'text-primary'
                   : 'text-muted-foreground'
               )}
@@ -55,10 +58,10 @@ export function CustomerHeader() {
           ))}
           {!user && (
              <Link
-              href="/"
+              href="/shop"
               className={cn(
                 'flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary',
-                 pathname === '/' ? 'text-primary' : 'text-muted-foreground'
+                 pathname === '/shop' ? 'text-primary' : 'text-muted-foreground'
               )}
             >
               <ShoppingBag className="h-4 w-4" />

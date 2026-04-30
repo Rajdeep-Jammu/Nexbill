@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -32,7 +33,7 @@ export default function CustomerMobileNav() {
   if (user) {
     navItems.push(
       { href: "/profile", icon: LayoutDashboard, label: "Dashboard" },
-      { href: "/", icon: ShoppingBag, label: "Products" },
+      { href: "/shop", icon: ShoppingBag, label: "Products" },
       { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount }
     );
      if (isAdmin) {
@@ -41,15 +42,14 @@ export default function CustomerMobileNav() {
     navItems.push({ href: "/settings", icon: Settings, label: "Settings" });
   } else {
      navItems.push(
-      { href: "/", icon: ShoppingBag, label: "Products" },
+      { href: "/shop", icon: ShoppingBag, label: "Products" },
       { href: "/cart", icon: ShoppingCart, label: "Cart", count: cartItemCount },
       { href: "/login", icon: LogIn, label: "Login" }
     );
   }
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
+    return pathname === href;
   };
   
   return (
