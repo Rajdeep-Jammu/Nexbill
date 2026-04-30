@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { useBillingStore } from "@/hooks/use-billing-store";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 import { cn } from "@/lib/utils";
 
@@ -43,7 +44,7 @@ export default function CustomerMobileNav() {
     <motion.div
       initial={{ y: 100 }}
       animate={{ y: 0 }}
-      className="fixed bottom-6 left-6 right-6 h-16 bg-[#111827]/80 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 lg:hidden glow-primary"
+      className="fixed bottom-6 left-6 right-6 h-16 bg-background/80 backdrop-blur-2xl border border-border rounded-[2rem] shadow-2xl z-50 lg:hidden glow-primary"
     >
       <nav className="flex h-full items-center justify-around px-2">
         {navItems.map((item) => (
@@ -56,19 +57,19 @@ export default function CustomerMobileNav() {
               whileTap={{ scale: 0.8 }}
               className={cn(
                 "p-2 rounded-xl transition-all duration-300",
-                isActive(item.href) ? "bg-primary/20" : "bg-transparent"
+                isActive(item.href) ? "bg-primary/10" : "bg-transparent"
               )}
             >
               <item.icon
                 className={cn(
                   "h-6 w-6 transition-all",
-                  isActive(item.href) ? "text-primary scale-110" : "text-white/40"
+                  isActive(item.href) ? "text-primary scale-110" : "text-muted-foreground"
                 )}
               />
               {item.count && item.count > 0 && (
                 <Badge
                   variant="destructive"
-                  className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0 border-2 border-[#111827] animate-bounce"
+                  className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0 border-2 border-background animate-bounce"
                 >
                   {item.count}
                 </Badge>

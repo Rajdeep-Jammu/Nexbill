@@ -16,6 +16,7 @@ import { Logo } from '@/components/Logo';
 import { useBillingStore } from '@/hooks/use-billing-store';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const navItems = [
   { href: '/profile', label: 'Dashboard', icon: LayoutDashboard },
@@ -28,7 +29,6 @@ export function CustomerHeader() {
   const { user, isUserLoading } = useUser();
   const cartItemCount = totalItems();
   
-  // The Logo always points to the Root, which redirects based on Auth.
   const homeHref = '/';
 
   return (
@@ -69,7 +69,9 @@ export function CustomerHeader() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
+        
         <Link href="/cart">
           <Button variant="ghost" size="icon" className="relative">
             <ShoppingCart />

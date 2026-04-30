@@ -8,7 +8,7 @@ import type { Bill } from '@/lib/types';
 
 import CustomerLayout from '../customer-layout';
 import PageHeader from '@/components/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, ShoppingBag, DollarSign, BarChartHorizontalBig, Hash, ArrowRight, Zap } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -18,6 +18,7 @@ import PurchaseHistoryBillItems from '@/components/profile/PurchaseHistoryBillIt
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -92,7 +93,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
         >
-            <Card className="bg-gradient-to-br from-indigo-600 via-primary to-emerald-500 backdrop-blur-lg border-none text-white overflow-hidden relative rounded-[2rem] sm:rounded-[3rem] shadow-2xl">
+            <Card className="bg-gradient-to-br from-indigo-600 via-primary to-emerald-500 border-none text-white overflow-hidden relative rounded-[2rem] sm:rounded-[3rem] shadow-2xl">
                 <div className="absolute -top-10 -right-10 p-8 opacity-10 animate-pulse">
                 <ShoppingBag className="h-48 w-48" />
                 </div>
@@ -151,26 +152,26 @@ export default function ProfilePage() {
             {salesLoading ? (
                 <Skeleton className="h-48 w-full rounded-[2rem]" />
             ) : userSales && userSales.length > 0 ? (
-                <Card className="bg-[#111827] rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden">
+                <Card className="rounded-[2rem] border border-border bg-card shadow-2xl overflow-hidden">
                 <CardContent className="p-0">
                     <Accordion type="single" collapsible className="w-full">
                     {userSales.map(sale => (
-                        <AccordionItem value={sale.id} key={sale.id} className="border-b last:border-0 border-white/5">
-                        <AccordionTrigger className="px-6 py-6 hover:no-underline hover:bg-white/5 transition-all group">
+                        <AccordionItem value={sale.id} key={sale.id} className="border-b last:border-0 border-border">
+                        <AccordionTrigger className="px-6 py-6 hover:no-underline hover:bg-secondary transition-all group">
                             <div className="flex justify-between w-full items-center">
                               <div className="text-left">
-                                  <p className="font-mono text-sm font-black text-primary group-hover:text-white transition-colors">{sale.invoiceNumber}</p>
+                                  <p className="font-mono text-sm font-black text-primary transition-colors">{sale.invoiceNumber}</p>
                                   <p className="text-xs text-muted-foreground font-bold">
                                   {new Date(sale.billDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                                   </p>
                               </div>
                               <div className="text-right pr-4">
                                 <p className="font-black text-lg sm:text-2xl">₹{sale.totalAmount.toLocaleString()}</p>
-                                <Badge className="text-[10px] bg-emerald-500/10 text-emerald-400 border-none font-black uppercase tracking-widest">Paid</Badge>
+                                <Badge className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none font-black uppercase tracking-widest">Paid</Badge>
                               </div>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent className="px-6 pb-6 bg-white/[0.02]">
+                        <AccordionContent className="px-6 pb-6 bg-secondary/30">
                             {shopId && <PurchaseHistoryBillItems shopId={shopId} billId={sale.id} />}
                         </AccordionContent>
                         </AccordionItem>
@@ -179,13 +180,13 @@ export default function ProfilePage() {
                 </CardContent>
                 </Card>
             ) : (
-                <div className="flex flex-col items-center justify-center py-20 rounded-[3rem] border-2 border-dashed border-white/10 bg-white/5 backdrop-blur-sm">
+                <div className="flex flex-col items-center justify-center py-20 rounded-[3rem] border-2 border-dashed border-border bg-card/50">
                   <div className="bg-primary/10 p-6 rounded-full mb-6">
                     <ShoppingBag className="h-12 w-12 text-primary opacity-50" />
                   </div>
-                  <p className="text-white/60 font-black text-xl mb-6">No drip found yet.</p>
+                  <p className="text-muted-foreground font-black text-xl mb-6">No drip found yet.</p>
                   <Link href="/shop">
-                    <Button variant="outline" className="rounded-full px-8 py-6 font-bold border-white/20 hover:bg-white/10">Start Shopping</Button>
+                    <Button variant="outline" className="rounded-full px-8 py-6 font-bold border-border hover:bg-secondary">Start Shopping</Button>
                   </Link>
                 </div>
             )}
