@@ -1,147 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Fingerprint, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
-
-import { useAuthStore } from "@/hooks/use-auth-store";
-import { Logo } from "@/components/Logo";
-import { PinInput } from "@/components/auth/PinInput";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { useUser } from "@/firebase";
 
 export default function LoginPage() {
-  const [pin, setPin] = useState("");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
-  const { shopName, pin: storedPin, login, biometricEnabled } = useAuthStore();
-  const { toast } = useToast();
-  const [isClient, setIsClient] = useState(false);
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, isAdmin } = useUser();
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (isClient && !isUserLoading && !user) {
-        router.replace('/login');
-        return;
-    }
-    // Wait until the store is rehydrated from localStorage before checking credentials
-    if (isClient && (!shopName || !storedPin)) {
-      router.replace("/admin/setup");
-    }
-  }, [isClient, shopName, storedPin, router, user, isUserLoading]);
-
-  const handleLogin = () => {
-    setIsLoggingIn(true);
-    setTimeout(() => {
-      if (pin === storedPin) {
-        login();
-        toast({
-          title: "Success",
-          description: `Welcome back, ${shopName}!`,
-        });
+    if (!isUserLoading) {
+      if (isAdmin) {
         router.replace("/admin/dashboard");
       } else {
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: "Incorrect PIN. Please try again.",
-        });
-        setPin("");
+        router.replace("/profile");
       }
-      setIsLoggingIn(false);
-    }, 500);
-  };
-  
-  const handleBiometric = () => {
-    setIsLoggingIn(true);
-    // This is a simulation of a biometric prompt.
-    // In a real app, you would use the WebAuthn API.
-    setTimeout(() => {
-        if (storedPin) {
-            login();
-            toast({
-                title: "Biometric Login Successful",
-                description: `Welcome back, ${shopName}!`,
-            });
-            router.replace("/admin/dashboard");
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Biometric Setup Error",
-                description: "No PIN is stored. Please set up PIN login first.",
-            });
-        }
-        setIsLoggingIn(false);
-    }, 700); // Simulate the time it takes for a biometric prompt
-  }
-
-  // Show a loader while the component is mounting and store is hydrating
-  if (!isClient || isUserLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+    }
+  }, [isAdmin, isUserLoading, router]);
 
   return (
-    <main className="flex h-screen w-full flex-col items-center justify-center bg-background p-4">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-white/10 bg-card/50 p-8 shadow-2xl backdrop-blur-lg"
-      >
-        <Logo className="h-12 w-12 text-primary" />
-        <h1 className="mt-6 font-headline text-3xl font-bold text-foreground">
-          {shopName ? `Welcome to ${shopName}`: "Admin Login"}
-        </h1>
-        <p className="mt-2 text-muted-foreground">Enter your PIN to access the admin panel</p>
-
-        <div className="my-8 flex items-center gap-4">
-          <PinInput value={pin} onChange={setPin} />
-        </div>
-
-        <div className="flex w-full flex-col gap-4">
-          <Button
-            onClick={handleLogin}
-            disabled={pin.length !== 4 || isLoggingIn}
-            className="w-full text-base font-bold"
-            size="lg"
-          >
-            {isLoggingIn ? <Loader2 className="animate-spin" /> : "Login"}
-          </Button>
-          {biometricEnabled && (
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full gap-2 text-base font-bold"
-              onClick={handleBiometric}
-              disabled={isLoggingIn}
-            >
-              {isLoggingIn ? <Loader2 className="animate-spin" /> : (
-                <>
-                  <Fingerprint className="h-5 w-5 text-primary" />
-                  Use Biometric
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-        <p className="mt-6 text-sm text-muted-foreground">
-          Not a shop owner?{" "}
-          <Link href="/" className="text-primary hover:underline">
-            Go to customer view
-          </Link>
-        </p>
-      </motion.div>
-    </main>
+    <div className="flex h-screen w-full items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
   );
 }

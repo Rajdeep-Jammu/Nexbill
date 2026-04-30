@@ -25,11 +25,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, KeyRound, QrCode, Wallet, Loader2, Edit, Copy, Store, ShieldCheck, Ticket, CreditCard, AlertTriangle } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { LogOut, QrCode, Wallet, Loader2, Edit, Copy, Store, Ticket, CreditCard, AlertTriangle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { ChangePinDialog } from '@/components/settings/ChangePinDialog';
 import ImageInput from '@/components/inventory/ImageInput';
 import { getCloudinarySignatureAction } from '@/lib/actions/cloudinary';
 import { ChangeShopNameDialog } from '@/components/settings/ChangeShopNameDialog';
@@ -44,9 +42,6 @@ export default function SettingsPage() {
   const {
     shopName,
     reset: resetAuth,
-    logout,
-    biometricEnabled,
-    toggleBiometric,
     upiId,
     qrCodeUrl,
     setPaymentDetails,
@@ -67,8 +62,7 @@ export default function SettingsPage() {
   const secretCode = (shopData as any)?.secretCode;
 
   const handleLogout = () => {
-    logout();
-    router.replace('/admin/login');
+    router.replace('/login');
   };
 
   const handleReset = () => {
@@ -197,46 +191,13 @@ export default function SettingsPage() {
                 className="w-full sm:w-auto rounded-xl font-black gap-2 h-12"
               >
                 <LogOut className="h-5 w-5" />
-                Sign Out
+                Exit Admin Panel
               </Button>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="rounded-[2rem] border-border/50 bg-card/50 backdrop-blur-xl card-3d overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl font-black">
-                 <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                Security
-              </CardTitle>
-              <CardDescription className="font-bold">Protect your admin access.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/30">
-                <Label htmlFor="biometric-switch" className="flex flex-col gap-1 pr-4">
-                  <span className="font-black">Biometric Login</span>
-                  <span className="text-[10px] text-muted-foreground font-bold">Use Fingerprint or FaceID.</span>
-                </Label>
-                <Switch
-                  id="biometric-switch"
-                  checked={biometricEnabled || false}
-                  onCheckedChange={toggleBiometric}
-                />
-              </div>
-              <ChangePinDialog>
-                <Button variant="outline" className="w-full sm:w-auto rounded-xl font-black gap-2 h-12">
-                  <KeyRound className="h-5 w-5" />
-                  Change Security PIN
-                </Button>
-              </ChangePinDialog>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="rounded-[2rem] border-border/50 bg-card/50 backdrop-blur-xl card-3d overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl font-black">
@@ -271,7 +232,7 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="rounded-[2rem] border-border/50 bg-card/50 backdrop-blur-xl card-3d overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl font-black">
@@ -313,7 +274,7 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <Card className="rounded-[2rem] border-destructive/20 bg-destructive/5 backdrop-blur-xl card-3d overflow-hidden border-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl font-black text-destructive">
@@ -333,7 +294,7 @@ export default function SettingsPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle className="font-black text-2xl">Absolute Certainty Required</AlertDialogTitle>
                     <AlertDialogDescription className="font-bold">
-                      This will wipe all shop data, sales, and inventory from this device. The cloud data remains, but you'll be logged out.
+                      This will wipe all local shop context. The cloud data remains, but you'll need to join again.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -342,7 +303,7 @@ export default function SettingsPage() {
                       onClick={handleReset}
                       className="bg-destructive hover:bg-destructive/90 rounded-xl font-black"
                     >
-                      Reset Everything
+                      Reset Local Context
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
