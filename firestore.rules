@@ -9,31 +9,6 @@
  *
  * Data Structure:
  * All application data is hierarchically organized under the `/shops/{shopId}` collection.
- * This top-level collection contains documents for each business, and all related data
- * (products, customers, bills, etc.) is stored in subcollections within that shop's document.
- * This structure naturally partitions data by tenant.
- *
- * Key Security Decisions:
- * - Default Deny: All operations are denied by default. Access is granted explicitly.
- * - No Global Listing: Listing all shops in the root collection is disallowed to protect tenant privacy.
- * - Owner-Centric Writes: All write operations (create, update, delete) on shop-related data
- *   are restricted to the designated shop owner or an application admin.
- * - Customer Read-Only Access: Authenticated customers are granted read-only (`get`, `list`) access
- *   to their own bills and bill items, but they cannot list all bills in a shop.
- *
- * Denormalization for Authorization:
- * To ensure performant and simple security rules, this model relies heavily on denormalization.
- * - `shopOwnerId`: The UID of the shop owner is denormalized and stored on every single document
- *   within a shop's data tree. This allows for direct ownership checks without costly `get()` calls
- *   to parent documents.
- * - `customerAuthUid`: If a customer is authenticated, their UID is denormalized onto their
- *   associated `Bill` and `BillItem` documents. This enables a simple and fast rule to grant them
- *   read access to their purchase history.
- *
- * Structural Segregation:
- * Each data type (Products, Customers, Bills) is stored in its own dedicated subcollection
- * under a shop. This clear separation simplifies rule logic, as a single set of permissions can
- * be applied uniformly to all documents within a given collection.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -43,67 +18,27 @@ service cloud.firestore {
     // Helper Functions
     // --------------------------------
 
-    /**
-     * Returns true if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Returns true if the current request's authenticated user UID
-     * matches the provided `uid`.
-     */
     function isAuthOwner(uid) {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    /**
-     * Returns true if the document being accessed exists.
-     * Used to protect against writes on non-existent documents.
-     */
-    function documentExists() {
-      return resource != null;
-    }
-
-    /**
-     * Checks if the currently authenticated user is an Admin, by checking
-     * for the existence of a document in the 'admins' collection.
-     */
     function isAppAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    /**
-     * Checks if the authenticated user is the owner of the specified shop.
-     * Performs a check on the shop document's 'shopOwnerId' field.
-     */
     function isShopOwner(shopId) {
       let shopPath = /databases/$(database)/documents/shops/$(shopId);
       return isSignedIn() && exists(shopPath) && get(shopPath).data.shopOwnerId == request.auth.uid;
     }
     
-    /**
-     * Checks if the user is the original shop owner OR an application admin.
-     * This is the primary function for authorizing management actions.
-     */
     function canManageShop(shopId) {
       return isAppAdmin() || isShopOwner(shopId);
     }
     
-    /**
-     * Checks if the owner of the public-facing shop is the currently
-     * authenticated user. This grants initial admin privileges.
-     */
-    function isPublicShopOwner() {
-      let activeShopId = get(/databases/$(database)/documents/public/config).data.activeShopId;
-      return isShopOwner(activeShopId);
-    }
-    
-    /**
-     * Checks if the user is the customer associated with a bill or bill item,
-     * based on the denormalized 'customerAuthUid' field.
-     */
     function isDocumentCustomer(docData) {
       return isSignedIn() && docData.customerAuthUid != null && request.auth.uid == docData.customerAuthUid;
     }
@@ -112,83 +47,49 @@ service cloud.firestore {
     // Collection Rules
     // --------------------------------
     
-    /**
-     * @description Public configuration data, readable by anyone.
-     */
     match /public/{docId} {
         allow get: if true;
         allow write: if isSignedIn() && (isAppAdmin() || isShopOwner(request.resource.data.activeShopId));
     }
     
-    /**
-     * @description Controls access to the 'admins' collection for role management.
-     */
     match /admins/{userId} {
       allow get: if isAuthOwner(userId);
       allow list, write: if isAppAdmin();
     }
 
-    /**
-     * @description Controls access to a Shop document, the root for all tenant data.
-     */
     match /shops/{shopId} {
       allow get: if isSignedIn();
-      allow list: if false; // Disallow listing all shops
+      allow list: if false; 
       allow create: if isSignedIn() && isAuthOwner(request.resource.data.shopOwnerId) && request.resource.data.id == shopId;
-      allow update, delete: if documentExists() && canManageShop(shopId);
-    }
+      allow update, delete: if canManageShop(shopId);
 
-    /**
-     * @description Manages products within a specific shop.
-     */
-    match /shops/{shopId}/products/{productId} {
-      allow get, list: if true;
-      allow write: if canManageShop(shopId);
-    }
+      match /products/{productId} {
+        allow get, list: if true;
+        allow write: if canManageShop(shopId);
+      }
 
-    /**
-     * @description Manages customer records associated with a specific shop.
-     */
-    match /shops/{shopId}/customers/{customerId} {
-      allow read, write: if canManageShop(shopId);
-    }
+      match /customers/{customerId} {
+        allow read, write: if canManageShop(shopId);
+      }
 
-    /**
-     * @description Controls access to bills (invoices).
-     */
-    match /shops/{shopId}/bills/{billId} {
-      // Get: Shop managers OR the customer associated with the bill.
-      allow get: if canManageShop(shopId) || isDocumentCustomer(resource.data);
-      
-      // List: Shop managers can list all. Customers MUST filter by their own UID.
-      allow list: if canManageShop(shopId) || (
-        isSignedIn() && 
-        request.query.limit <= 100 && 
-        request.query.filters.customerAuthUid == request.auth.uid
-      );
-      
-      allow write: if canManageShop(shopId);
-
-      /**
-       * @description Controls access to the line items of a bill.
-       */
-      match /billItems/{billItemId} {
-        // Use denormalized customerAuthUid on the item for optimized auth.
+      match /bills/{billId} {
+        // Get: Shop managers OR the specific customer.
         allow get: if canManageShop(shopId) || isDocumentCustomer(resource.data);
         
-        allow list: if canManageShop(shopId) || (
-          isSignedIn() && 
-          request.query.limit <= 100 && 
-          request.query.filters.customerAuthUid == request.auth.uid
-        );
+        // List: Allowed if user is shop manager OR if they filter by their own UID.
+        // Firestore will enforce that the query returns ONLY documents matching the rule.
+        allow list: if canManageShop(shopId) || (isSignedIn() && resource.data.customerAuthUid == request.auth.uid);
         
         allow write: if canManageShop(shopId);
+
+        match /billItems/{billItemId} {
+          allow get: if canManageShop(shopId) || isDocumentCustomer(resource.data);
+          allow list: if canManageShop(shopId) || (isSignedIn() && resource.data.customerAuthUid == request.auth.uid);
+          allow write: if canManageShop(shopId);
+        }
       }
     }
     
-    /**
-     * @description Controls access to user profiles.
-     */
     match /users/{userId} {
         allow get: if isSignedIn();
         allow write: if isAuthOwner(userId);
