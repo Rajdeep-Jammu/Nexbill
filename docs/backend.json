@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Shop": {
@@ -317,6 +318,10 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short biographical description about the user."
         }
       },
       "required": [

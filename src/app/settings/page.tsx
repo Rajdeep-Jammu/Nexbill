@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -11,17 +12,22 @@ import PageHeader from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Edit, User, ShieldCheck, Mail, Zap } from 'lucide-react';
+import { Loader2, LogOut, Edit, User, ShieldCheck, Mail, Zap, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 import { Badge } from '@/components/ui/badge';
+import { doc } from 'firebase/firestore';
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+
+  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfileData } = useDoc(userDocRef);
 
   useEffect(() => {
     setIsClient(true);
@@ -135,6 +141,18 @@ export default function SettingsPage() {
                       <Button variant="ghost" size="sm" className="font-black text-primary hover:bg-primary/10">Edit</Button>
                     </EditProfileDialog>
                   </div>
+
+                  {userProfileData?.bio && (
+                      <div className="p-4 rounded-2xl bg-secondary/50 space-y-1">
+                         <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground flex items-center gap-1">
+                            <MessageSquare className="h-2 w-2" />
+                            Bio
+                         </p>
+                         <p className="text-sm font-bold text-foreground leading-relaxed">
+                            {userProfileData.bio}
+                         </p>
+                      </div>
+                  )}
               </CardContent>
           </Card>
 

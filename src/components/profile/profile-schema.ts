@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -6,6 +7,7 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 
 export const profileSchema = z.object({
   displayName: z.string().min(3, "Display name must be at least 3 characters").max(50, "Display name can be at most 50 characters"),
+  bio: z.string().max(160, "Bio can be at most 160 characters").optional(),
   photo: z.any()
     .refine(
         (file) => !(file instanceof File) || file.size <= MAX_FILE_SIZE, 
