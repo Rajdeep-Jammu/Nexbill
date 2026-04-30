@@ -5,7 +5,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { CartItem } from "@/lib/types";
 
 export type CheckoutSession = {
-  id: string; // The unique session code
+  id: string; // The unique 4-digit numeric code
   items: CartItem[];
   total: number;
   status: 'pending' | 'paid';
@@ -26,8 +26,10 @@ export const useSessionsStore = create<SessionsState>()(
     (set, get) => ({
       sessions: [],
       createSession: (items, total, userId) => {
+        // Generate a 4-digit numeric code
+        const numericId = Math.floor(1000 + Math.random() * 9000).toString();
         const newSession: CheckoutSession = {
-          id: Math.random().toString(36).substring(2, 8).toUpperCase(),
+          id: numericId,
           items,
           total,
           status: 'pending',

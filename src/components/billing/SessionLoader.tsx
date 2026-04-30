@@ -18,23 +18,23 @@ export default function SessionLoader() {
 
     const handleFetchBill = () => {
         if (!sessionId) {
-            toast({ variant: 'destructive', title: 'Please enter a session code.' });
+            toast({ variant: 'destructive', title: 'Please enter a code.' });
             return;
         }
 
         setIsLoading(true);
         // Simulate network delay
         setTimeout(() => {
-            const session = getSession(sessionId.toUpperCase());
+            const session = getSession(sessionId.trim());
             if (session) {
                 if (session.status === 'paid') {
-                     toast({ variant: 'destructive', title: 'Session Already Processed', description: 'This bill has already been paid and processed.' });
+                     toast({ variant: 'destructive', title: 'Already Processed', description: 'This bill has already been paid.' });
                 } else {
                     loadCart(session.items, session.id);
                     toast({ title: 'Bill Loaded', description: `Loaded bill for session ${session.id}.` });
                 }
             } else {
-                toast({ variant: 'destructive', title: 'Session Not Found', description: 'No active session found for the provided code.' });
+                toast({ variant: 'destructive', title: 'Not Found', description: 'No active session found for this 4-digit code.' });
             }
             setIsLoading(false);
             setSessionId('');
@@ -42,22 +42,24 @@ export default function SessionLoader() {
     };
 
     return (
-        <Card className="mb-8">
+        <Card className="mb-8 border-primary/20 bg-primary/5">
             <CardHeader>
-                <CardTitle>Load Customer Bill</CardTitle>
+                <CardTitle className="text-lg font-black">Load Customer Bill</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="flex w-full max-w-sm items-center space-x-2">
                     <Input 
                         type="text" 
-                        placeholder="Enter session code..." 
+                        inputMode="numeric"
+                        maxLength={4}
+                        placeholder="Enter 4-digit code" 
                         value={sessionId}
-                        onChange={(e) => setSessionId(e.target.value)}
-                        className="font-mono"
+                        onChange={(e) => setSessionId(e.target.value.replace(/\D/g, ''))}
+                        className="font-mono text-center text-xl font-bold tracking-widest h-12"
                     />
-                    <Button type="button" onClick={handleFetchBill} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                        Fetch Bill
+                    <Button type="button" onClick={handleFetchBill} disabled={isLoading} className="h-12 px-6 font-bold">
+                        {isLoading ? <Loader2 className="animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
+                        Fetch
                     </Button>
                 </div>
             </CardContent>
