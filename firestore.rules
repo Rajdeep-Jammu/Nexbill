@@ -1,14 +1,8 @@
+
 /**
  * Core Philosophy:
  * This ruleset implements a multi-tenant security model centered around Shops.
- * Each Shop is an isolated data silo controlled by a single owner (`shopOwnerId`).
- * The primary security mechanism is strict data ownership, ensuring shop owners can only
- * access and manage their own data (products, customers, bills).
- * A secondary, read-only access pattern is provided for authenticated customers,
- * allowing them to view their personal purchase history.
- *
- * Data Structure:
- * All application data is hierarchically organized under the `/shops/{shopId}` collection.
+ * Optimization: Uses denormalized `shopOwnerId` for instant, reliable ownership checks.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -30,13 +24,13 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    function isShopOwner(shopId) {
-      let shopPath = /databases/$(database)/documents/shops/$(shopId);
-      return isSignedIn() && exists(shopPath) && get(shopPath).data.shopOwnerId == request.auth.uid;
+    // Rely on denormalized shopOwnerId in the document for performance and reliability
+    function isOwnerOf(docData) {
+      return isSignedIn() && docData.shopOwnerId == request.auth.uid;
     }
     
-    function canManageShop(shopId) {
-      return isAppAdmin() || isShopOwner(shopId);
+    function canManage(docData) {
+      return isAppAdmin() || isOwnerOf(docData);
     }
     
     function isDocumentCustomer(docData) {
@@ -49,7 +43,7 @@ service cloud.firestore {
     
     match /public/{docId} {
         allow get: if true;
-        allow write: if isSignedIn() && (isAppAdmin() || isShopOwner(request.resource.data.activeShopId));
+        allow write: if isSignedIn() && (isAppAdmin() || isAuthOwner(request.resource.data.shopOwnerId));
     }
     
     match /admins/{userId} {
@@ -58,34 +52,30 @@ service cloud.firestore {
     }
 
     match /shops/{shopId} {
+      // Use resource.data for updates/deletes and request.resource.data for creates
       allow get: if isSignedIn();
       allow list: if false; 
-      allow create: if isSignedIn() && isAuthOwner(request.resource.data.shopOwnerId) && request.resource.data.id == shopId;
-      allow update, delete: if canManageShop(shopId);
+      allow create: if isSignedIn() && isAuthOwner(request.resource.data.shopOwnerId);
+      allow update, delete: if canManage(resource.data);
 
       match /products/{productId} {
         allow get, list: if true;
-        allow write: if canManageShop(shopId);
+        allow write: if canManage(request.resource.data);
       }
 
       match /customers/{customerId} {
-        allow read, write: if canManageShop(shopId);
+        allow read, write: if canManage(resource.data) || canManage(request.resource.data);
       }
 
       match /bills/{billId} {
-        // Get: Shop managers OR the specific customer.
-        allow get: if canManageShop(shopId) || isDocumentCustomer(resource.data);
-        
-        // List: Allowed if user is shop manager OR if they filter by their own UID.
-        // Firestore will enforce that the query returns ONLY documents matching the rule.
-        allow list: if canManageShop(shopId) || (isSignedIn() && resource.data.customerAuthUid == request.auth.uid);
-        
-        allow write: if canManageShop(shopId);
+        allow get: if canManage(resource.data) || isDocumentCustomer(resource.data);
+        allow list: if isSignedIn() && (isAppAdmin() || resource.data.shopOwnerId == request.auth.uid || resource.data.customerAuthUid == request.auth.uid);
+        allow write: if canManage(request.resource.data);
 
         match /billItems/{billItemId} {
-          allow get: if canManageShop(shopId) || isDocumentCustomer(resource.data);
-          allow list: if canManageShop(shopId) || (isSignedIn() && resource.data.customerAuthUid == request.auth.uid);
-          allow write: if canManageShop(shopId);
+          allow get: if canManage(resource.data) || isDocumentCustomer(resource.data);
+          allow list: if isSignedIn() && (isAppAdmin() || resource.data.shopOwnerId == request.auth.uid || resource.data.customerAuthUid == request.auth.uid);
+          allow write: if canManage(request.resource.data);
         }
       }
     }

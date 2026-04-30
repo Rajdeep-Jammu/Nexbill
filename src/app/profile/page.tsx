@@ -1,20 +1,16 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { useMemo, useState, useEffect } from 'react';
-import { collection, query, where, doc, orderBy } from 'firebase/firestore';
-import type { Bill } from '@/lib/types';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useState, useEffect } from 'react';
+import { doc } from 'firebase/firestore';
 
 import CustomerLayout from '../customer-layout';
 import PageHeader from '@/components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, ShoppingBag, DollarSign, BarChartHorizontalBig, Hash, ArrowRight, Zap, ShoppingCart } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Skeleton } from '@/components/ui/skeleton';
-import StatCard from '@/components/dashboard/StatCard';
-import PurchaseHistoryBillItems from '@/components/profile/PurchaseHistoryBillItems';
+import { Loader2, ShoppingCart, ArrowRight, Zap, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -29,18 +25,6 @@ export default function ProfilePage() {
 
   const configRef = useMemoFirebase(() => doc(firestore, 'public', 'config'), [firestore]);
   const { data: config } = useDoc(configRef);
-  const shopId = (config as any)?.activeShopId;
-
-  const billsQuery = useMemoFirebase(() => {
-    if (!user || !shopId) return null;
-    return query(
-      collection(firestore, 'shops', shopId, 'bills'),
-      where('customerAuthUid', '==', user.uid),
-      orderBy('billDate', 'desc')
-    );
-  }, [firestore, user, shopId]);
-
-  const { data: userSales, isLoading: salesLoading } = useCollection<Bill>(billsQuery);
 
   useEffect(() => {
     setIsClient(true);
@@ -51,21 +35,6 @@ export default function ProfilePage() {
       router.replace('/login');
     }
   }, [isClient, isUserLoading, user, router]);
-
-  const stats = useMemo(() => {
-    if (!userSales) return { totalSpent: 0, totalOrders: 0, totalItems: 0, avgOrderValue: 0 };
-    const totalSpent = userSales.reduce((acc, bill) => acc + bill.totalAmount, 0);
-    const totalOrders = userSales.length;
-    const totalItems = userSales.reduce((acc, bill) => acc + (bill.itemCount || 0), 0);
-    const avgOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
-    
-    return {
-        totalSpent,
-        totalOrders,
-        totalItems,
-        avgOrderValue,
-    }
-  }, [userSales]);
 
   if (!isClient || isUserLoading || !user) {
     return (
@@ -114,98 +83,28 @@ export default function ProfilePage() {
                         <p className="text-white/80 font-bold text-base sm:text-2xl">{user.email}</p>
                         <div className="pt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
                             <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-md px-4 py-1.5 font-bold rounded-full">Member Since 2024</Badge>
-                            <Badge className="bg-emerald-400 text-emerald-950 border-none px-4 py-1.5 font-black rounded-full shadow-lg">GOLD STATUS</Badge>
+                            <Badge className="bg-emerald-400 text-emerald-950 border-none px-4 py-1.5 font-black rounded-full shadow-lg">PREMIUM STATUS</Badge>
                         </div>
                     </div>
                 </CardContent>
             </Card>
         </motion.div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
-            <StatCard 
-                title="Total Spent"
-                value={`₹${stats.totalSpent.toLocaleString()}`}
-                change="Lifetime Value"
-                icon={<DollarSign className="h-6 w-6" />}
-            />
-            <StatCard 
-                title="Orders"
-                value={stats.totalOrders.toString()}
-                change="Completed"
-                icon={<ShoppingBag className="h-6 w-6" />}
-            />
-             <StatCard 
-                title="Items"
-                value={stats.totalItems.toString()}
-                change="Purchased"
-                icon={<Hash className="h-6 w-6" />}
-            />
-             <StatCard 
-                title="Avg. Order"
-                value={`₹${Math.round(stats.avgOrderValue).toLocaleString()}`}
-                change="Ticket Size"
-                icon={<BarChartHorizontalBig className="h-6 w-6" />}
-            />
-        </div>
-
-        <div className="space-y-6">
-            <div className="flex items-center justify-between px-2">
-              <h2 className="font-headline text-2xl sm:text-4xl font-black tracking-tight">Order History</h2>
-              {userSales && userSales.length > 0 && (
-                <Badge className="bg-primary/10 text-primary border-primary/20 font-bold px-4 py-1.5 rounded-full">{userSales.length} Transactions</Badge>
-              )}
-            </div>
-
-            {salesLoading ? (
-                <div className="space-y-4">
-                   {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-[2rem]" />)}
+        <div className="grid grid-cols-1 gap-6">
+            <Card className="rounded-[2.5rem] border border-border/50 bg-card/50 backdrop-blur-xl p-8 sm:p-12">
+                <div className="flex flex-col items-center justify-center text-center space-y-4">
+                    <div className="p-4 rounded-full bg-primary/10 text-primary mb-2">
+                        <UserIcon className="h-8 w-8" />
+                    </div>
+                    <h2 className="text-2xl font-black">Welcome to your space</h2>
+                    <p className="text-muted-foreground font-bold max-w-md">
+                        This is your personal dashboard. You can update your settings, manage your profile, and explore our latest products in the shop.
+                    </p>
+                    <Link href="/settings">
+                        <Button variant="outline" className="rounded-xl px-8 font-bold">Edit Profile Settings</Button>
+                    </Link>
                 </div>
-            ) : userSales && userSales.length > 0 ? (
-                <Card className="rounded-[2.5rem] border border-border/50 bg-card/50 backdrop-blur-xl shadow-2xl overflow-hidden border-2">
-                <CardContent className="p-0">
-                    <Accordion type="single" collapsible className="w-full">
-                    {userSales.map(sale => (
-                        <AccordionItem value={sale.id} key={sale.id} className="border-b last:border-0 border-border/30 overflow-hidden">
-                        <AccordionTrigger className="px-8 py-8 hover:no-underline hover:bg-secondary/50 transition-all group">
-                            <div className="flex justify-between w-full items-center">
-                              <div className="text-left space-y-1">
-                                  <p className="font-mono text-sm font-black text-primary transition-colors group-hover:scale-105 origin-left inline-block">{sale.invoiceNumber}</p>
-                                  <p className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                                  {new Date(sale.billDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                                  </p>
-                              </div>
-                              <div className="text-right pr-4 flex items-center gap-4 sm:gap-10">
-                                <div className="space-y-1">
-                                  <p className="font-black text-xl sm:text-3xl">₹{sale.totalAmount.toLocaleString()}</p>
-                                  <Badge className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none font-black uppercase tracking-[0.2em] px-2 py-0">PAID</Badge>
-                                </div>
-                              </div>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-8 pb-8 bg-secondary/10">
-                            {shopId && <PurchaseHistoryBillItems shopId={shopId} billId={sale.id} />}
-                        </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                    </Accordion>
-                </CardContent>
-                </Card>
-            ) : (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col items-center justify-center py-24 rounded-[3rem] border-4 border-dashed border-border/30 bg-card/30 backdrop-blur-sm"
-                >
-                  <div className="bg-primary/10 p-8 rounded-full mb-8 glow-primary">
-                    <ShoppingBag className="h-16 w-16 text-primary opacity-60" />
-                  </div>
-                  <h3 className="text-2xl font-black mb-2">No drip found yet!</h3>
-                  <p className="text-muted-foreground font-bold mb-10 text-center max-w-xs">Your shopping journey starts with your first purchase.</p>
-                  <Link href="/shop">
-                    <Button className="rounded-full px-12 py-8 font-black text-xl shadow-2xl hover:scale-105 transition-transform bg-primary">Start Shopping</Button>
-                  </Link>
-                </motion.div>
-            )}
+            </Card>
         </div>
       </div>
     </CustomerLayout>
