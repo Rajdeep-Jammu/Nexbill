@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Loader2, ShoppingBag } from 'lucide-react';
@@ -55,8 +54,8 @@ export default function ShopPage() {
       </div>
 
       {isDataLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {[...Array(8)].map((_, i) => (
+        <div className="grid grid-cols-3 gap-4 md:gap-6">
+          {[...Array(9)].map((_, i) => (
             <Skeleton key={i} className="aspect-[4/5] rounded-3xl" />
           ))}
         </div>

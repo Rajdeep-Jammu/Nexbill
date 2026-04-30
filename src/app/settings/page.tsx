@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -12,11 +11,12 @@ import PageHeader from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Edit, User, ShieldCheck, Mail, Zap, MessageSquare } from 'lucide-react';
+import { Loader2, LogOut, Edit, User, ShieldCheck, Mail, Zap, MessageSquare, Moon, Sun, Monitor } from 'lucide-react';
 import Link from 'next/link';
 import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 import { Badge } from '@/components/ui/badge';
 import { doc } from 'firebase/firestore';
+import { useThemeStore } from '@/hooks/use-theme-store';
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const { theme, toggleTheme } = useThemeStore();
   const [isClient, setIsClient] = useState(false);
 
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -153,6 +154,37 @@ export default function SettingsPage() {
                          </p>
                       </div>
                   )}
+              </CardContent>
+          </Card>
+
+          <Card className="rounded-[2rem] border border-border/50 bg-card/50 backdrop-blur-xl card-3d overflow-hidden group hover:border-amber-500/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-black flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+                    <Monitor className="h-5 w-5" />
+                  </div>
+                  Appearance
+                </CardTitle>
+                <CardDescription className="font-bold">Customize how the app looks for you.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <Button 
+                    onClick={toggleTheme} 
+                    variant="outline" 
+                    className="w-full h-16 rounded-2xl font-black gap-3 text-lg border-2"
+                  >
+                    {theme === 'light' ? (
+                      <>
+                        <Moon className="h-6 w-6 text-indigo-600" />
+                        Switch to Dark Mode
+                      </>
+                    ) : (
+                      <>
+                        <Sun className="h-6 w-6 text-amber-400" />
+                        Switch to Light Mode
+                      </>
+                    )}
+                  </Button>
               </CardContent>
           </Card>
 
