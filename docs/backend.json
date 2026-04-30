@@ -179,7 +179,11 @@
         },
         "customerId": {
           "type": "string",
-          "description": "Reference to the Customer associated with this bill. This field is optional if a bill can be created for an anonymous customer. (Relationship: Customer 1:N Bill)"
+          "description": "Reference to the Customer associated with this bill. (Relationship: Customer 1:N Bill)"
+        },
+        "customerAuthUid": {
+          "type": "string",
+          "description": "Firebase UID of the customer, used for denormalized authorization and history tracking."
         },
         "invoiceNumber": {
           "type": "string",
@@ -251,6 +255,10 @@
         "productName": {
           "type": "string",
           "description": "The name of the product at the time of sale (snapshot to preserve historical data)."
+        },
+        "customerAuthUid": {
+          "type": "string",
+          "description": "Firebase UID of the customer, denormalized from the parent Bill for optimized authorization."
         },
         "quantity": {
           "type": "number",
