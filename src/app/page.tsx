@@ -1,8 +1,8 @@
+
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShoppingBag } from 'lucide-react';
 import CustomerLayout from './customer-layout';
 import PageHeader from '@/components/PageHeader';
 import ProductGrid from '@/components/customer/ProductGrid';
@@ -10,18 +10,12 @@ import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@
 import { doc, collection, query } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function CustomerHomePage() {
   const firestore = useFirestore();
-  const router = useRouter();
   const { user, isUserLoading } = useUser();
-
-  // Redirect logged-in users to their dashboard
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.replace('/profile');
-    }
-  }, [user, isUserLoading, router]);
 
   // 1. Fetch the public config to get the active shop ID
   const configRef = useMemoFirebase(() => doc(firestore, 'public', 'config'), [firestore]);
@@ -38,29 +32,47 @@ export default function CustomerHomePage() {
 
   const isDataLoading = isConfigLoading || areProductsLoading;
 
-  // Show a loader while checking auth state or if user is being redirected
-  if (isUserLoading || user) {
+  if (isUserLoading) {
     return (
        <CustomerLayout>
-        <div className="flex h-[60vh] w-full items-center justify-center bg-background">
+        <div className="flex h-[60vh] w-full items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </CustomerLayout>
     );
   }
 
-  // Render product page for guests
   return (
     <CustomerLayout>
-      <PageHeader title={(config as any)?.shopName || 'Our Products'} />
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+        <PageHeader title={(config as any)?.shopName || 'Our Products'} />
+        {user && (
+          <Link href="/profile">
+            <Button variant="outline" className="rounded-full px-6">
+              Go to My Dashboard
+            </Button>
+          </Link>
+        )}
+      </div>
+
       {isDataLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-64 rounded-2xl" />
+            <Skeleton key={i} className="aspect-[4/5] rounded-3xl" />
           ))}
         </div>
+      ) : products && products.length > 0 ? (
+        <ProductGrid products={products} />
       ) : (
-        <ProductGrid products={products || []} />
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="bg-primary/10 p-6 rounded-full mb-6">
+            <ShoppingBag className="h-12 w-12 text-primary opacity-50" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">No products found</h2>
+          <p className="text-muted-foreground max-w-sm">
+            The shop is currently empty. Please check back later!
+          </p>
+        </div>
       )}
     </CustomerLayout>
   );

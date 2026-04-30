@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -10,11 +11,13 @@ import CustomerLayout from '../customer-layout';
 import PageHeader from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, ShoppingBag, DollarSign, BarChartHorizontalBig, Hash } from 'lucide-react';
+import { Loader2, ShoppingBag, DollarSign, BarChartHorizontalBig, Hash, ArrowRight } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatCard from '@/components/dashboard/StatCard';
 import PurchaseHistoryBillItems from '@/components/profile/PurchaseHistoryBillItems';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -43,7 +46,6 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    // If auth state is resolved, and there's no user, redirect to login.
     if (isClient && !isUserLoading && !user) {
       router.replace('/login');
     }
@@ -64,11 +66,10 @@ export default function ProfilePage() {
     }
   }, [userSales]);
 
-  // Show a loader while waiting for client, auth state, or if there's no user (before redirect).
   if (!isClient || isUserLoading || !user) {
     return (
       <CustomerLayout>
-        <div className="flex h-[60vh] w-full items-center justify-center bg-background">
+        <div className="flex h-[60vh] w-full items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </CustomerLayout>
@@ -77,70 +78,91 @@ export default function ProfilePage() {
 
   return (
     <CustomerLayout>
-      <PageHeader title="My Dashboard" />
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+        <PageHeader title="My Dashboard" />
+        <Link href="/">
+          <Button className="rounded-full shadow-lg group gap-2">
+            Continue Shopping
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Button>
+        </Link>
+      </div>
+
       <div className="space-y-8">
-        <Card className="bg-gradient-to-br from-primary/10 to-transparent backdrop-blur-lg border-white/10">
-            <CardHeader className="flex-row items-center gap-6 space-y-0">
-                 <Avatar className="h-20 w-20 border-2 border-primary/50">
+        <Card className="bg-gradient-to-br from-primary to-primary-foreground/20 backdrop-blur-lg border-none text-white overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <ShoppingBag className="h-32 w-32" />
+            </div>
+            <CardHeader className="flex-row items-center gap-6 space-y-0 relative z-10">
+                 <Avatar className="h-24 w-24 border-4 border-white/20 shadow-xl">
                     {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || user.email || 'User'} />}
-                    <AvatarFallback className="text-3xl">{user.displayName ? user.displayName[0].toUpperCase() : (user.email?.[0].toUpperCase() || 'U')}</AvatarFallback>
+                    <AvatarFallback className="text-3xl bg-white/10 text-white">{user.displayName ? user.displayName[0].toUpperCase() : (user.email?.[0].toUpperCase() || 'U')}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <CardTitle className="text-3xl font-headline">Welcome back, {user.displayName || user.email?.split('@')[0]}!</CardTitle>
-                    <CardDescription>{user.email}</CardDescription>
+                    <CardTitle className="text-3xl md:text-4xl font-headline font-black">Hi, {user.displayName || user.email?.split('@')[0]}!</CardTitle>
+                    <CardDescription className="text-white/80 font-medium">{user.email}</CardDescription>
                 </div>
             </CardHeader>
         </Card>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             <StatCard 
                 title="Total Spent"
                 value={`₹${stats.totalSpent.toLocaleString()}`}
                 change="All time"
-                icon={<DollarSign className="h-5 w-5 text-primary" />}
+                icon={<DollarSign className="h-5 w-5" />}
             />
             <StatCard 
-                title="Total Orders"
+                title="Orders"
                 value={stats.totalOrders.toString()}
                 change="All time"
-                icon={<ShoppingBag className="h-5 w-5 text-primary" />}
+                icon={<ShoppingBag className="h-5 w-5" />}
             />
              <StatCard 
-                title="Items Purchased"
+                title="Items"
                 value={stats.totalItems.toString()}
                 change="All time"
-                icon={<Hash className="h-5 w-5 text-primary" />}
+                icon={<Hash className="h-5 w-5" />}
             />
              <StatCard 
-                title="Avg. Order Value"
-                value={`₹${stats.avgOrderValue.toLocaleString()}`}
-                change="All time"
-                icon={<BarChartHorizontalBig className="h-5 w-5 text-primary" />}
+                title="Avg. Order"
+                value={`₹${Math.round(stats.avgOrderValue).toLocaleString()}`}
+                change="Per order"
+                icon={<BarChartHorizontalBig className="h-5 w-5" />}
             />
         </div>
 
         <div>
-            <h2 className="font-headline text-2xl font-semibold mb-4">Purchase History</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-headline text-2xl font-bold">Purchase History</h2>
+              {userSales && userSales.length > 0 && (
+                <span className="text-sm font-bold text-primary">{userSales.length} Total Records</span>
+              )}
+            </div>
+
             {salesLoading ? (
-                <Skeleton className="h-48 w-full rounded-2xl" />
+                <Skeleton className="h-48 w-full rounded-[2rem]" />
             ) : userSales && userSales.length > 0 ? (
-                <Card className="bg-card/50 backdrop-blur-lg border-white/10">
+                <Card className="bg-white rounded-[2rem] border-none shadow-xl overflow-hidden">
                 <CardContent className="p-0">
                     <Accordion type="single" collapsible className="w-full">
                     {userSales.map(sale => (
-                        <AccordionItem value={sale.id} key={sale.id}>
-                        <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline">
+                        <AccordionItem value={sale.id} key={sale.id} className="border-b last:border-0 border-gray-100">
+                        <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-gray-50 transition-colors">
                             <div className="flex justify-between w-full items-center">
-                            <div className="text-left">
-                                <p className="font-mono text-sm">{sale.invoiceNumber}</p>
-                                <p className="text-xs text-muted-foreground">
-                                {new Date(sale.billDate).toLocaleDateString()}
-                                </p>
-                            </div>
-                            <p className="font-semibold self-center pr-4">₹{sale.totalAmount.toLocaleString()}</p>
+                              <div className="text-left">
+                                  <p className="font-mono text-sm font-bold text-primary">{sale.invoiceNumber}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                  {new Date(sale.billDate).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                                  </p>
+                              </div>
+                              <div className="text-right pr-6">
+                                <p className="font-black text-lg">₹{sale.totalAmount.toLocaleString()}</p>
+                                <p className="text-[10px] uppercase tracking-wider font-bold text-green-500">Paid</p>
+                              </div>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent className="px-4 md:px-6 pb-4 bg-muted/20">
+                        <AccordionContent className="px-6 pb-6 bg-gray-50/50">
                             {shopId && <PurchaseHistoryBillItems shopId={shopId} billId={sale.id} />}
                         </AccordionContent>
                         </AccordionItem>
@@ -149,8 +171,14 @@ export default function ProfilePage() {
                 </CardContent>
                 </Card>
             ) : (
-                <div className="flex h-48 items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/50">
-                <p className="text-muted-foreground">You haven't made any purchases yet.</p>
+                <div className="flex flex-col items-center justify-center py-16 rounded-[2rem] border-2 border-dashed border-gray-200 bg-white shadow-sm">
+                  <div className="bg-gray-100 p-4 rounded-full mb-4">
+                    <ShoppingBag className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-bold mb-4">You haven't made any purchases yet.</p>
+                  <Link href="/">
+                    <Button variant="outline" className="rounded-full">Shop Now</Button>
+                  </Link>
                 </div>
             )}
         </div>
