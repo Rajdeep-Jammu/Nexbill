@@ -61,6 +61,7 @@ export default function Cart() {
           price: item.price,
           cartQuantity: item.cartQuantity,
           imageUrl: item.imageUrl,
+          category: item.category,
           quantity: item.quantity, // stock info
         })),
         total: totalAmount(),
@@ -159,7 +160,7 @@ export default function Cart() {
                                     className="h-9 w-9 rounded-xl bg-background shadow-sm hover:bg-primary/10 hover:text-primary transition-all" 
                                     onClick={() => updateQuantity(item.id, item.cartQuantity - 1)}
                                   >
-                                    <偏Minus className="h-4 w-4" />
+                                    <Minus className="h-4 w-4" />
                                   </Button>
                                   <span className="w-8 text-center text-lg font-black">{item.cartQuantity}</span>
                                   <Button 
