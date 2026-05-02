@@ -40,6 +40,14 @@ service cloud.firestore {
       allow update: if isSignedIn();
     }
 
+    // Support Collection Group queries for Bills (used in Purchase History)
+    match /{path=**}/bills/{billId} {
+      allow read: if isSignedIn() && (
+        resource.data.customerAuthUid == request.auth.uid || 
+        isShopOwner(resource.data.shopId)
+      );
+    }
+
     match /shops/{shopId} {
       allow get: if true;
       allow create: if isSignedIn();
