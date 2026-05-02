@@ -17,6 +17,7 @@ import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 import { Badge } from '@/components/ui/badge';
 import { doc } from 'firebase/firestore';
 import { useThemeStore } from '@/hooks/use-theme-store';
+import OrderHistory from '@/components/profile/OrderHistory';
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -80,7 +81,7 @@ export default function SettingsPage() {
     <CustomerLayout>
       <PageHeader title="Settings" />
       
-      <div className="space-y-8 max-w-2xl mx-auto pb-10">
+      <div className="space-y-8 max-w-2xl mx-auto pb-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -121,7 +122,7 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid gap-4 sm:gap-6"
+          className="grid gap-6"
         >
           <Card className="rounded-[2rem] border border-border/50 bg-card/50 backdrop-blur-xl card-3d overflow-hidden group hover:border-primary/50 transition-colors">
               <CardHeader className="pb-2">
@@ -156,6 +157,8 @@ export default function SettingsPage() {
                   )}
               </CardContent>
           </Card>
+
+          <OrderHistory />
 
           <Card className="rounded-[2rem] border border-border/50 bg-card/50 backdrop-blur-xl card-3d overflow-hidden group hover:border-amber-500/50 transition-colors">
               <CardHeader className="pb-2">

@@ -38,12 +38,25 @@ export default function CurrentBill() {
     try {
       const batch = writeBatch(firestore);
 
-      // 1. Create Bill document
+      // 1. Mark session as paid if it came from a customer session
+      let customerUid = null;
+      if (activeSessionId) {
+        const sessionRef = doc(firestore, 'sessions', activeSessionId);
+        const sessionSnap = await getDoc(sessionRef);
+        if (sessionSnap.exists()) {
+            const sessionData = sessionSnap.data();
+            customerUid = sessionData.userId || null;
+            batch.update(sessionRef, { status: 'paid' });
+        }
+      }
+
+      // 2. Create Bill document
       const billRef = doc(collection(firestore, 'shops', currentShopId, 'bills'));
       const bill: Bill = {
         id: billRef.id,
         shopId: currentShopId,
         shopOwnerId: shopOwnerId,
+        customerAuthUid: customerUid,
         invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
         billDate: new Date().toISOString(),
         subtotal: billData.total,
@@ -57,7 +70,7 @@ export default function CurrentBill() {
       
       batch.set(billRef, bill);
 
-      // 2. Create BillItem documents & Update Inventory
+      // 3. Create BillItem documents & Update Inventory
       for (const item of billData.items) {
         const billItemRef = doc(collection(firestore, 'shops', currentShopId, 'bills', billRef.id, 'billItems'));
         const billItem: BillItem = {
@@ -71,11 +84,10 @@ export default function CurrentBill() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           shopOwnerId: shopOwnerId,
+          customerAuthUid: customerUid || undefined,
         };
         batch.set(billItemRef, billItem);
 
-        // Safety: Check if the product exists before updating stock
-        // This prevents "No document to update" errors.
         const productRef = doc(firestore, 'shops', currentShopId, 'products', item.id);
         const productSnap = await getDoc(productRef);
         
@@ -87,15 +99,6 @@ export default function CurrentBill() {
         }
       }
       
-      // 3. Mark session as paid if it came from a customer session
-      if (activeSessionId) {
-        const sessionRef = doc(firestore, 'sessions', activeSessionId);
-        const sessionSnap = await getDoc(sessionRef);
-        if (sessionSnap.exists()) {
-            batch.update(sessionRef, { status: 'paid' });
-        }
-      }
-
       await batch.commit();
 
       toast({
