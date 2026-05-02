@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,20 +26,22 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Wallet, Loader2, Edit, Copy, Store, Ticket, CreditCard, AlertTriangle } from 'lucide-react';
+import { LogOut, Wallet, Loader2, Edit, Copy, Store, Ticket, CreditCard, AlertTriangle, RefreshCw, Clock } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import ImageInput from '@/components/inventory/ImageInput';
 import { getCloudinarySignatureAction } from '@/lib/actions/cloudinary';
 import { ChangeShopNameDialog } from '@/components/settings/ChangeShopNameDialog';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, useUser } from '@/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useUser();
   const {
     shopName,
     reset: resetAuth,
@@ -53,15 +56,19 @@ export default function SettingsPage() {
   const [localUpiId, setLocalUpiId] = useState(upiId || '');
   const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
   const [isSavingPayment, setIsSavingPayment] = useState(false);
+  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
 
   const shopRef = useMemoFirebase(
     () => (shopId ? doc(firestore, 'shops', shopId) : null),
     [firestore, shopId]
   );
   const { data: shopData, isLoading: isShopLoading } = useDoc(shopRef);
-  const secretCode = (shopData as any)?.secretCode;
 
-  // Sync local state when shopData loads (especially payment info from cloud)
+  const inviteCode = (shopData as any)?.inviteCode;
+  const inviteCodeAt = (shopData as any)?.inviteCodeAt;
+  const isOwner = user?.uid === (shopData as any)?.shopOwnerId;
+
+  // Sync local state when shopData loads
   useEffect(() => {
     if (shopData) {
       if ((shopData as any).upiId) setLocalUpiId((shopData as any).upiId);
@@ -80,6 +87,32 @@ export default function SettingsPage() {
       description: 'System has been reset.',
     });
     router.replace('/admin/setup');
+  };
+
+  const handleGenerateInvite = async () => {
+    if (!shopId || !isOwner) return;
+    setIsGeneratingInvite(true);
+    try {
+      const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const shopDocRef = doc(firestore, 'shops', shopId);
+      await updateDoc(shopDocRef, {
+        inviteCode: newCode,
+        inviteCodeAt: new Date().toISOString(),
+        updatedAt: serverTimestamp()
+      });
+      toast({
+        title: 'Invite Code Generated',
+        description: 'New code is valid for 10 minutes.',
+      });
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to generate code',
+        description: e.message,
+      });
+    } finally {
+      setIsGeneratingInvite(false);
+    }
   };
 
   const handlePaymentDetailsSave = async () => {
@@ -115,15 +148,13 @@ export default function SettingsPage() {
         }
       }
 
-      // Update Firestore Cloud Copy
       const shopDocRef = doc(firestore, 'shops', shopId);
       await updateDoc(shopDocRef, {
         upiId: localUpiId,
         qrCodeUrl: finalQrCodeUrl,
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       });
 
-      // Update Local Store
       setPaymentDetails({
         upiId: localUpiId,
         qrCodeUrl: finalQrCodeUrl || '',
@@ -146,8 +177,8 @@ export default function SettingsPage() {
   };
 
   const handleCopyCode = () => {
-    if (!secretCode) return;
-    navigator.clipboard.writeText(secretCode);
+    if (!inviteCode) return;
+    navigator.clipboard.writeText(inviteCode);
     toast({
         title: "Copied!",
         description: "Invite code copied to clipboard.",
@@ -203,27 +234,52 @@ export default function SettingsPage() {
                 </div>
                 Invite Shopkeepers
               </CardTitle>
-              <CardDescription className="font-bold">Add other admins to your shop.</CardDescription>
+              <CardDescription className="font-bold">Add other admins to your shop (Valid for 10 min).</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               {isShopLoading ? (
                 <Skeleton className="h-20 w-full rounded-2xl" />
-              ) : secretCode ? (
-                <div className="flex items-center gap-4">
-                  <div 
-                    className="flex-1 cursor-pointer rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center group hover:bg-primary/10 transition-colors"
-                    onClick={handleCopyCode}
+              ) : isOwner ? (
+                <div className="space-y-6">
+                   {inviteCode ? (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div 
+                                className="flex-1 cursor-pointer rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center group hover:bg-primary/10 transition-colors"
+                                onClick={handleCopyCode}
+                            >
+                                <p className="font-mono text-4xl font-black tracking-[0.2em] text-primary">
+                                {inviteCode}
+                                </p>
+                            </div>
+                            <Button variant="outline" size="icon" className="h-16 w-16 rounded-2xl border-primary/20" onClick={handleCopyCode}>
+                                <Copy className="h-6 w-6 text-primary" />
+                            </Button>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-xs font-black uppercase text-muted-foreground bg-secondary/50 py-2 rounded-xl">
+                            <Clock className="h-3 w-3" />
+                            Generated at {new Date(inviteCodeAt).toLocaleTimeString()}
+                        </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 px-4 bg-secondary/30 rounded-2xl border-2 border-dashed border-border/50">
+                        <p className="text-sm text-muted-foreground font-bold italic mb-4">No active invite code. Generate one below.</p>
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={handleGenerateInvite} 
+                    disabled={isGeneratingInvite}
+                    className="w-full rounded-xl py-6 font-black text-base gap-2 bg-amber-500 hover:bg-amber-600 shadow-xl shadow-amber-500/20"
                   >
-                    <p className="font-mono text-3xl font-black tracking-[0.2em] text-primary">
-                      {secretCode}
-                    </p>
-                  </div>
-                  <Button variant="outline" size="icon" className="h-16 w-16 rounded-2xl border-primary/20" onClick={handleCopyCode}>
-                    <Copy className="h-6 w-6 text-primary" />
+                    {isGeneratingInvite ? <Loader2 className="animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+                    Generate Temporary Invite Code
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground font-bold italic">No code generated.</p>
+                <p className="text-sm text-muted-foreground font-bold italic text-center py-4 bg-secondary/20 rounded-xl border border-border/50">
+                  Only the shop owner can generate invite codes.
+                </p>
               )}
             </CardContent>
           </Card>

@@ -12,11 +12,14 @@
         "currency": { "type": "string" },
         "logoUrl": { "type": "string", "format": "uri" },
         "shopOwnerId": { "type": "string" },
-        "secretCode": { "type": "string" },
+        "inviteCode": { "type": "string" },
+        "inviteCodeAt": { "type": "string", "format": "date-time" },
+        "upiId": { "type": "string" },
+        "qrCodeUrl": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "name", "currency", "shopOwnerId", "secretCode", "createdAt", "updatedAt"]
+      "required": ["id", "name", "currency", "shopOwnerId", "createdAt", "updatedAt"]
     },
     "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",

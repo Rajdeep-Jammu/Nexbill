@@ -1,3 +1,4 @@
+
 import { FieldValue } from "firebase/firestore";
 
 export type Product = {
@@ -48,3 +49,17 @@ export type BillItem = {
     shopOwnerId: string;
     customerAuthUid?: string;
 }
+
+export type Shop = {
+  id: string;
+  name: string;
+  currency: string;
+  logoUrl?: string;
+  shopOwnerId: string;
+  inviteCode?: string;
+  inviteCodeAt?: string;
+  upiId?: string;
+  qrCodeUrl?: string;
+  createdAt: FieldValue | string;
+  updatedAt: FieldValue | string;
+};
