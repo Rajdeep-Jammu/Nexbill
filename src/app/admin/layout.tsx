@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
+import DesktopSidebar from '@/components/layout/DesktopSidebar';
 import { Loader2 } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -95,8 +96,13 @@ export default function AdminAppLayout({
   }
   
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <main className="flex-1 p-4 pb-24">{children}</main>
+    <div className="flex min-h-screen bg-background text-foreground">
+      <DesktopSidebar />
+      <main className="flex-1 p-4 pb-24 lg:pb-8 lg:p-8 lg:ml-64 transition-all duration-300">
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
+      </main>
       <MobileBottomNav />
     </div>
   );

@@ -9,8 +9,10 @@ export default function CustomerLayout({
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <CustomerHeader />
-      <main className="flex-1 p-4 pb-24 lg:pb-4">
-        {children}
+      <main className="flex-1 p-4 pb-24 lg:pb-12">
+        <div className="max-w-7xl mx-auto w-full">
+            {children}
+        </div>
       </main>
       <CustomerMobileNav />
     </div>
