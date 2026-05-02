@@ -7,7 +7,7 @@ interface ProductGridProps {
   products: Product[];
 }
 
-export default function ProductGrid({ products }: ProductGridProps) {
+export default function ProductGrid({ products }: { products: Product[] }) {
   if (products.length === 0) {
     return (
       <div className="flex h-[50vh] items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/50">

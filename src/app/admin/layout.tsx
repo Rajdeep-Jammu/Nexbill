@@ -59,7 +59,7 @@ export default function AdminAppLayout({
           }
           router.replace('/admin/setup');
         } catch (error) {
-          console.error("Error fetching shop context for admin:", error);
+          // Centralized error handling handles this, so we just redirect.
           router.replace('/admin/setup');
         } finally {
           setIsContextLoading(false);

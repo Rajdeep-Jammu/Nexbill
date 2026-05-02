@@ -74,8 +74,8 @@ export default function CurrentBill() {
         };
         batch.set(billItemRef, billItem);
 
-        // Safety: Ensure the product actually exists before updating stock
-        // This prevents "No document to update" errors if the product was deleted
+        // Safety: Check if the product exists before updating stock
+        // This prevents "No document to update" errors.
         const productRef = doc(firestore, 'shops', currentShopId, 'products', item.id);
         const productSnap = await getDoc(productRef);
         
@@ -87,7 +87,7 @@ export default function CurrentBill() {
         }
       }
       
-      // 3. Mark session as paid
+      // 3. Mark session as paid if it came from a customer session
       if (activeSessionId) {
         const sessionRef = doc(firestore, 'sessions', activeSessionId);
         const sessionSnap = await getDoc(sessionRef);
@@ -104,7 +104,6 @@ export default function CurrentBill() {
       });
 
     } catch (error: any) {
-        console.error("Failed to save bill:", error);
         toast({
             variant: 'destructive',
             title: "Checkout Failed",
