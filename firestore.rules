@@ -42,7 +42,11 @@ service cloud.firestore {
 
     // Support Collection Group queries for Bills (used in Purchase History)
     match /{path=**}/bills/{billId} {
-      allow read: if isSignedIn() && (
+      allow list: if isSignedIn() && (
+        resource.data.customerAuthUid == request.auth.uid || 
+        isShopOwner(resource.data.shopId)
+      );
+      allow get: if isSignedIn() && (
         resource.data.customerAuthUid == request.auth.uid || 
         isShopOwner(resource.data.shopId)
       );
