@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useBillingStore } from '@/hooks/use-billing-store';
@@ -12,12 +11,12 @@ import BillGeneratedDialog from './BillGeneratedDialog';
 import { useState } from 'react';
 import type { CartItem, Bill, BillItem } from '@/lib/types';
 import { useFirestore } from '@/firebase';
-import { collection, doc, writeBatch, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export default function CurrentBill() {
   const { items, updateQuantity, removeFromCart, totalAmount, clearCart, activeSessionId } = useBillingStore();
-  const { shopId, shopOwnerId } = useAuthStore();
+  const { shopId: currentShopId, shopOwnerId } = useAuthStore();
   const [billData, setBillData] = useState<{ items: CartItem[]; total: number } | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   
@@ -32,7 +31,7 @@ export default function CurrentBill() {
   };
 
   const onDialogClose = async () => {
-    if (!billData || !shopId || !shopOwnerId) return;
+    if (!billData || !currentShopId || !shopOwnerId) return;
 
     setIsCheckingOut(true);
 
@@ -40,10 +39,10 @@ export default function CurrentBill() {
       const batch = writeBatch(firestore);
 
       // 1. Create Bill document
-      const billRef = doc(collection(firestore, 'shops', shopId, 'bills'));
+      const billRef = doc(collection(firestore, 'shops', currentShopId, 'bills'));
       const bill: Bill = {
         id: billRef.id,
-        shopId,
+        shopId: currentShopId,
         shopOwnerId: shopOwnerId,
         invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
         billDate: new Date().toISOString(),
@@ -60,7 +59,7 @@ export default function CurrentBill() {
 
       // 2. Create BillItem documents & Update Inventory
       for (const item of billData.items) {
-        const billItemRef = doc(collection(firestore, 'shops', shopId, 'bills', billRef.id, 'billItems'));
+        const billItemRef = doc(collection(firestore, 'shops', currentShopId, 'bills', billRef.id, 'billItems'));
         const billItem: BillItem = {
           id: billItemRef.id,
           billId: billRef.id,
@@ -75,16 +74,26 @@ export default function CurrentBill() {
         };
         batch.set(billItemRef, billItem);
 
-        const productRef = doc(firestore, 'shops', shopId, 'products', item.id);
-        batch.update(productRef, {
-            quantity: item.quantity - item.cartQuantity
-        });
+        // Safety: Ensure the product actually exists before updating stock
+        // This prevents "No document to update" errors if the product was deleted
+        const productRef = doc(firestore, 'shops', currentShopId, 'products', item.id);
+        const productSnap = await getDoc(productRef);
+        
+        if (productSnap.exists()) {
+            const currentStock = productSnap.data().quantity || 0;
+            batch.update(productRef, {
+                quantity: Math.max(0, currentStock - item.cartQuantity)
+            });
+        }
       }
       
-      // 3. Mark session as paid or delete it
+      // 3. Mark session as paid
       if (activeSessionId) {
         const sessionRef = doc(firestore, 'sessions', activeSessionId);
-        batch.update(sessionRef, { status: 'paid' });
+        const sessionSnap = await getDoc(sessionRef);
+        if (sessionSnap.exists()) {
+            batch.update(sessionRef, { status: 'paid' });
+        }
       }
 
       await batch.commit();

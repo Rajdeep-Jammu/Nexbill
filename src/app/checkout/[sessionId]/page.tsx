@@ -1,16 +1,12 @@
-
 "use client";
 
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 import CustomerLayout from '../../customer-layout';
-import PageHeader from "@/components/PageHeader";
 import CheckoutSessionDisplay from '@/components/checkout/CheckoutSessionDisplay';
-import { useAuthStore } from '@/hooks/use-auth-store';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ShoppingBag } from 'lucide-react';
+import { Terminal, ShoppingBag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -22,11 +18,14 @@ export default function CheckoutPage() {
     
     const firestore = useFirestore();
     const sessionRef = useMemoFirebase(() => doc(firestore, 'sessions', sessionId), [firestore, sessionId]);
-    const { data: session, isLoading, error } = useDoc(sessionRef);
+    const { data: session, isLoading: isSessionLoading, error: sessionError } = useDoc(sessionRef);
 
-    const { qrCodeUrl, upiId } = useAuthStore();
+    // Fetch Shop Data based on the session's shopId to get Payment Details (QR/UPI)
+    const shopId = (session as any)?.shopId;
+    const shopRef = useMemoFirebase(() => shopId ? doc(firestore, 'shops', shopId) : null, [firestore, shopId]);
+    const { data: shopData, isLoading: isShopLoading } = useDoc(shopRef);
 
-    if (isLoading) {
+    if (isSessionLoading || (shopId && isShopLoading)) {
         return (
             <CustomerLayout>
                 <div className="flex flex-col items-center gap-8 py-10">
@@ -37,7 +36,7 @@ export default function CheckoutPage() {
         );
     }
 
-    if (!session || error) {
+    if (!session || sessionError) {
         return (
             <CustomerLayout>
                 <div className="flex flex-col items-center justify-center text-center h-[70vh] p-4">
@@ -59,6 +58,9 @@ export default function CheckoutPage() {
         )
     }
 
+    const qrCodeUrl = (shopData as any)?.qrCodeUrl;
+    const upiId = (shopData as any)?.upiId;
+
     if (!qrCodeUrl && !upiId) {
          return (
              <CustomerLayout>
@@ -67,7 +69,7 @@ export default function CheckoutPage() {
                         <Terminal className="h-5 w-5 text-amber-500" />
                         <AlertTitle className="font-black text-amber-500">Payment Unconfigured</AlertTitle>
                         <AlertDescription className="font-bold">
-                            The shop owner hasn't set up their UPI details yet. Please show your checkout code to the staff.
+                            The shop owner hasn't set up their UPI details in the cloud yet. Please show your checkout code to the staff.
                         </AlertDescription>
                     </Alert>
                     <div className="mt-8">

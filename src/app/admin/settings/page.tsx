@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useBillingStore } from '@/hooks/use-billing-store';
@@ -25,14 +25,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, QrCode, Wallet, Loader2, Edit, Copy, Store, Ticket, CreditCard, AlertTriangle } from 'lucide-react';
+import { LogOut, Wallet, Loader2, Edit, Copy, Store, Ticket, CreditCard, AlertTriangle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import ImageInput from '@/components/inventory/ImageInput';
 import { getCloudinarySignatureAction } from '@/lib/actions/cloudinary';
 import { ChangeShopNameDialog } from '@/components/settings/ChangeShopNameDialog';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 
@@ -61,6 +61,13 @@ export default function SettingsPage() {
   const { data: shopData, isLoading: isShopLoading } = useDoc(shopRef);
   const secretCode = (shopData as any)?.secretCode;
 
+  // Sync local state when shopData loads (especially payment info from cloud)
+  useEffect(() => {
+    if (shopData) {
+      if ((shopData as any).upiId) setLocalUpiId((shopData as any).upiId);
+    }
+  }, [shopData]);
+
   const handleLogout = () => {
     router.replace('/login');
   };
@@ -76,70 +83,60 @@ export default function SettingsPage() {
   };
 
   const handlePaymentDetailsSave = async () => {
+    if (!shopId) return;
     setIsSavingPayment(true);
-    let finalQrCodeUrl = qrCodeUrl;
-
-    if (
-      qrCodeFile &&
-      (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
-        !process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY)
-    ) {
-      toast({
-        variant: 'destructive',
-        title: 'Cloudinary Not Configured',
-        description: 'Check your .env file.',
-      });
-      setIsSavingPayment(false);
-      return;
-    }
+    let finalQrCodeUrl = (shopData as any)?.qrCodeUrl || qrCodeUrl;
 
     try {
       if (qrCodeFile) {
-        const { timestamp, signature, error } =
-          await getCloudinarySignatureAction('qrcodes');
+        if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || !process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY) {
+            throw new Error("Cloudinary not configured in .env");
+        }
+
+        const { timestamp, signature, error } = await getCloudinarySignatureAction('qrcodes');
         if (error) throw new Error(error);
 
         const formData = new FormData();
         formData.append('file', qrCodeFile);
-        formData.append(
-          'api_key',
-          process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY as string
-        );
+        formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY as string);
         formData.append('signature', signature);
         formData.append('timestamp', timestamp.toString());
         formData.append('folder', 'qrcodes');
 
         const endpoint = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`;
-
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          body: formData,
-        });
+        const response = await fetch(endpoint, { method: 'POST', body: formData });
 
         if (response.ok) {
           const data = await response.json();
           finalQrCodeUrl = data.secure_url;
         } else {
           const errorData = await response.json();
-          throw new Error(
-            `Cloudinary upload failed: ${errorData.error.message}`
-          );
+          throw new Error(`Cloudinary upload failed: ${errorData.error.message}`);
         }
       }
 
+      // Update Firestore Cloud Copy
+      const shopDocRef = doc(firestore, 'shops', shopId);
+      await updateDoc(shopDocRef, {
+        upiId: localUpiId,
+        qrCodeUrl: finalQrCodeUrl,
+        updatedAt: new Date().toISOString()
+      });
+
+      // Update Local Store
       setPaymentDetails({
         upiId: localUpiId,
         qrCodeUrl: finalQrCodeUrl || '',
       });
 
       toast({
-        title: 'Success',
-        description: 'Payment details updated.',
+        title: 'Cloud Synced',
+        description: 'Payment details updated across all devices.',
       });
     } catch (e: any) {
       toast({
         variant: 'destructive',
-        title: 'Error',
+        title: 'Sync Error',
         description: e.message,
       });
     } finally {
@@ -260,7 +257,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label className="font-black text-xs uppercase tracking-widest text-muted-foreground">Payment QR Code</Label>
                 <div className="max-w-xs mx-auto">
-                  <ImageInput onChange={setQrCodeFile} initialImageUrl={qrCodeUrl} />
+                  <ImageInput onChange={setQrCodeFile} initialImageUrl={(shopData as any)?.qrCodeUrl || qrCodeUrl} />
                 </div>
               </div>
               <Button
@@ -268,7 +265,7 @@ export default function SettingsPage() {
                 disabled={isSavingPayment}
                 className="w-full rounded-xl py-6 font-black text-lg shadow-xl shadow-primary/20"
               >
-                {isSavingPayment ? <Loader2 className="animate-spin" /> : 'Update Payment Assets'}
+                {isSavingPayment ? <Loader2 className="animate-spin" /> : 'Update Cloud Payment Assets'}
               </Button>
             </CardContent>
           </Card>
