@@ -41,11 +41,16 @@ service cloud.firestore {
     }
 
     // Support Collection Group queries for Bills (used in Purchase History)
+    // Rules for collection groups must be precisely matching the query filters for 'list' to work.
     match /{path=**}/bills/{billId} {
+      // Allow list if the query is explicitly filtered by the user's UID
       allow list: if isSignedIn() && (
-        resource.data.customerAuthUid == request.auth.uid || 
-        isShopOwner(resource.data.shopId)
+        request.query.filters.size() > 0 && 
+        request.query.filters[0].field == "customerAuthUid" && 
+        request.query.filters[0].value == request.auth.uid
       );
+      
+      // Allow individual document access if user is the customer or the shop owner
       allow get: if isSignedIn() && (
         resource.data.customerAuthUid == request.auth.uid || 
         isShopOwner(resource.data.shopId)
@@ -63,11 +68,17 @@ service cloud.firestore {
       }
 
       match /bills/{billId} {
+        // Standard path-based access
         allow read: if isSignedIn() && (isShopOwner(shopId) || resource.data.customerAuthUid == request.auth.uid);
         allow write: if isShopOwner(shopId);
 
         match /billItems/{billItemId} {
-          allow read: if isSignedIn() && (isShopOwner(shopId) || resource.data.customerAuthUid == request.auth.uid);
+          // Allow reading items if the user owns the shop or is the customer of the parent bill
+          // We use the parent bill's data for authorization to ensure consistency
+          allow read: if isSignedIn() && (
+            isShopOwner(shopId) || 
+            get(/databases/$(database)/documents/shops/$(shopId)/bills/$(billId)).data.customerAuthUid == request.auth.uid
+          );
           allow write: if isShopOwner(shopId);
         }
       }
