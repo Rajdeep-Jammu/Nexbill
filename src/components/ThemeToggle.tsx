@@ -21,15 +21,15 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="rounded-full w-10 h-10 bg-secondary/50 hover:bg-primary/20 transition-colors"
+      className="rounded-full w-10 h-10 bg-secondary/50 hover:bg-primary/20 transition-colors overflow-hidden"
     >
       <AnimatePresence mode="wait">
         <motion.div
           key={theme}
-          initial={{ y: -10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 10, opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          initial={{ y: -20, opacity: 0, rotate: -90 }}
+          animate={{ y: 0, opacity: 1, rotate: 0 }}
+          exit={{ y: 20, opacity: 0, rotate: 90 }}
+          transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
         >
           {theme === 'light' ? (
             <Moon className="h-5 w-5 text-indigo-600" />

@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Plus } from "lucide-react";
-import { motion } from "framer-motion";
+import { Plus, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +29,7 @@ export default function CustomerProductCard({ product }: CustomerProductCardProp
     if (stock > 0) {
       setIsAdding(true);
       addToCart(product);
-      setTimeout(() => setIsAdding(false), 500);
+      setTimeout(() => setIsAdding(false), 800);
       toast({
         title: `${product.name} added`,
         description: "Added to cart!",
@@ -51,14 +51,14 @@ export default function CustomerProductCard({ product }: CustomerProductCardProp
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className="h-full"
     >
-      <Card className="card-3d overflow-hidden rounded-[1.25rem] sm:rounded-[2rem] h-full flex flex-col border border-border/50 bg-card">
+      <Card className="card-3d overflow-hidden rounded-[1.25rem] sm:rounded-[2rem] h-full flex flex-col border border-border/50 bg-card group relative">
         <CardContent className="p-0 flex flex-col flex-grow">
           <div className="relative overflow-hidden aspect-[4/5]">
             <Image
               src={product.imageUrl}
               alt={product.name}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-110"
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
               data-ai-hint={product.imageHint}
               sizes="(max-width: 768px) 33vw, 25vw"
             />
@@ -71,11 +71,11 @@ export default function CustomerProductCard({ product }: CustomerProductCardProp
               ) : null}
             </div>
 
-            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-300 hidden sm:flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex items-center justify-center p-4">
                <Button 
                 onClick={handleAddToCart} 
                 disabled={stock <= 0}
-                className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-10 rounded-xl shadow-xl transform translate-y-4 hover:translate-y-0 transition-transform"
+                className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-10 rounded-xl shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform"
                >
                  {isAdding ? "Adding..." : "Quick Add"}
                </Button>
@@ -97,14 +97,37 @@ export default function CustomerProductCard({ product }: CustomerProductCardProp
                 </p>
               </div>
 
-              <motion.div whileTap={{ scale: 0.8 }}>
+              <motion.div 
+                whileTap={{ scale: 0.8 }}
+                className="sm:hidden"
+              >
                 <Button 
                   size="icon" 
                   onClick={handleAddToCart} 
                   disabled={stock <= 0} 
-                  className="h-7 w-7 sm:h-12 sm:w-12 rounded-lg sm:rounded-2xl shadow-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-white sm:hidden flex"
+                  className={`h-7 w-7 rounded-lg shadow-lg border border-primary/20 text-primary hover:text-white transition-all duration-300 ${isAdding ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-primary/10 hover:bg-primary'}`}
                 >
-                  <Plus className="h-4 w-4 sm:h-6 sm:w-6" />
+                  <AnimatePresence mode="wait">
+                    {isAdding ? (
+                      <motion.div
+                        key="check"
+                        initial={{ scale: 0, rotate: -45 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        exit={{ scale: 0 }}
+                      >
+                        <Check className="h-4 w-4" />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="plus"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </Button>
               </motion.div>
             </div>
