@@ -17,7 +17,6 @@ import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 import { Badge } from '@/components/ui/badge';
 import { doc } from 'firebase/firestore';
 import { useThemeStore } from '@/hooks/use-theme-store';
-import OrderHistory from '@/components/profile/OrderHistory';
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -157,8 +156,6 @@ export default function SettingsPage() {
                   )}
               </CardContent>
           </Card>
-
-          <OrderHistory />
 
           <Card className="rounded-[2rem] border border-border/50 bg-card/50 backdrop-blur-xl card-3d overflow-hidden group hover:border-amber-500/50 transition-colors">
               <CardHeader className="pb-2">
